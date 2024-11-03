@@ -25,14 +25,13 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 
 class Tables(BaseModel):
     tables: list[str] = Field(..., description="The list of tables")
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
 
 class DBQuery(BaseModel):
     query: str = Field(..., description="The SQL query to execute")
 
-class ExamineQuery(BaseModel):
-    result: str = Field(..., description="The result of examining the query. Answer with either Rewrite, Extend or Correct")
     
 
 # Describe a tool to represent the end state
@@ -62,27 +61,6 @@ class SQLAgentTest:
         from langchain_community.utilities import SQLDatabase
 
         self.db = SQLDatabase.from_uri("sqlite:///Chinook.db")
-
-    def create_tool_node_with_fallback(self, tools:list) -> RunnableWithFallbacks[Any, dict]:
-        """ 
-        Create a tool node with fallback to handle errors and surface them to the agent.
-        """
-        return ToolNode(tools).with_fallbacks(
-            [RunnableLambda(self.handle_tool_error)], exception_key = "error"
-        )
-
-    def handle_tool_error(self, state) -> dict:
-        error = state.get("error")
-        tool_calls = state["messages"][-1].tool_calls
-        return {
-            "messages": [
-                ToolMessage(
-                    content = f"An error occurred: {error}",
-                    tool_call_id = tc["id"],
-                )
-                for tc in tool_calls
-            ]
-        }
     
     def define_tools(self):
 
