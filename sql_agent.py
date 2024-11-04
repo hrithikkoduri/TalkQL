@@ -305,6 +305,7 @@ class SQLAgent:
 
 if __name__ == "__main__":
     agent = SQLAgent()
+    agent.add_db("sqlite", url = "https://storage.googleapis.com/benchmarks-artifacts/chinook/Chinook.db")
     query_result, query_used = agent.graph_workflow("Led Zeppelin's vs Queen's total sales and number of tracks sold in every year")
     print(query_result)
     print(query_used)
