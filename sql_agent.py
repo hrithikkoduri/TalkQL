@@ -224,33 +224,6 @@ class SQLAgent:
         print("--------------------------------Query generated--------------------------------")
         return {"messages": state["messages"] + [AIMessage(content = f"{generate_query_result.query}")]}
     
-    def examine_query(self, state: State):
-        """
-        Correct the query if it is not syntactically correct
-        """
-        print("--------------------------------Examining query--------------------------------")
-        print(f"Messages in examine query: {state['messages']}")
-        messages = state["messages"]
-
-        correct_query_system = """ 
-        You are a helpful assistant who is a SQL expert that examines SQL queries to check if they are syntactically correct and if they take into account all the relevant tables and columns that are needed to answer the user's question.
-
-        In the state messages in placeholder, you will find:
-        1. The user's question
-        2. All the tables in the database
-        3. The complete schema information for those tables
-        4. The SQL query that was generated
-
-        If you think the query is incorrect, since it is syntactically incorrect, you should output as "Rewrite"
-        If you think the query is incorrect because it is not taking into account all the relevant tables and columns that are needed to answer the user's question, you should output as "Extend"
-        If the query is correct, you should output as "Correct"
-        """
-
-        examine_query_llm = self.llm.with_structured_output(ExamineQuery)
-        examine_query_result = examine_query_llm.invoke(messages)
-        print(examine_query_result)
-        print("--------------------------------Query examined--------------------------------")
-        return {"messages": state["messages"]}
     
     def execute_query(self, state: State):
         """
