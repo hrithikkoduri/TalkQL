@@ -2,23 +2,18 @@ import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 import requests
-from langchain_core.messages import ToolMessage
-from langchain_core.runnables import RunnableLambda, RunnableWithFallbacks
-from langgraph.prebuilt import ToolNode
-from typing import Any
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain_core.tools import tool, Tool
+from langchain_core.tools import Tool
 from langchain_core.prompts import ChatPromptTemplate
-from typing import Annotated, Literal
-
-from langchain_core.messages import AIMessage, HumanMessage
+from typing import Annotated
+from langchain_core.messages import AIMessage, HumanMessage 
 from langchain_openai import ChatOpenAI
-
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
-
 from langgraph.graph import END, StateGraph, START
 from langgraph.graph.message import AnyMessage, add_messages
+from langchain_community.utilities import SQLDatabase
+
 
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -39,7 +34,7 @@ class SubmitFinalAnswer(BaseModel):
     """ Submit the final answer to the user based on the query result."""
     final_answer: str = Field(...,description = "The final answer to the user")
 
-class SQLAgentTest:
+class SQLAgent:
     def __init__(self):
         self.llm = ChatOpenAI(model="gpt-4o", temperature = 0)
         self.db = None
@@ -47,20 +42,75 @@ class SQLAgentTest:
         self.get_schema_tool = None
         self.db_query_tool = None
         self.query_check = None
+        self.db_uri = None
 
-    def db_connect(self):
-        url = "https://storage.googleapis.com/benchmarks-artifacts/chinook/Chinook.db"
 
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            with open("Chinook.db", "wb") as f:
-                f.write(response.content)
+    
+    def add_db(self, db_type: str, **connection_params):
+        """
+        Set up database connection based on the database type
+        
+        Args:
+            db_type: Type of database (sqlite, mysql, postgresql, mssql)
+            connection_params: Database connection parameters
+        """
+        if db_type.lower() == "sqlite":
+            url = connection_params.get("url")
+            db_name = "downloaded_database.db"
+            if url:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    with open(db_name, "wb") as f:
+                        f.write(response.content)
+                    self.db_uri = f"sqlite:///{db_name}"
+                else:
+                    raise Exception(f"Failed to download the database. Status code: {response.status_code}")
+            else:
+                db_path = connection_params.get("db_path", db_name)
+                self.db_uri = f"sqlite:///{db_path}"
+        
+        elif db_type.lower() == "mysql":
+            user = connection_params.get("user", "root")
+            password = connection_params.get("password", "")
+            host = connection_params.get("host", "localhost")
+            port = connection_params.get("port", "3306")
+            database = connection_params.get("database")
+            if not database:
+                raise ValueError("Database name is required for MySQL")
+            self.db_uri = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}"
+        
+        elif db_type.lower() == "postgresql":
+            user = connection_params.get("user", "postgres")
+            password = connection_params.get("password", "")
+            host = connection_params.get("host", "localhost")
+            port = connection_params.get("port", "5432")
+            database = connection_params.get("database")
+            if not database:
+                raise ValueError("Database name is required for PostgreSQL")
+            self.db_uri = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        
+        elif db_type.lower() in ["mssql", "sqlserver"]:
+            user = connection_params.get("user")
+            password = connection_params.get("password")
+            host = connection_params.get("host", "localhost")
+            port = connection_params.get("port", "1433")
+            database = connection_params.get("database")
+            driver = connection_params.get("driver", "ODBC Driver 17 for SQL Server")
+            
+            if not all([user, password, database]):
+                raise ValueError("User, password, and database are required for MS SQL Server")
+            
+            # Format for MS SQL Server connection string
+            self.db_uri = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver={driver.replace(' ', '+')}"
+        
         else:
-            print(f"Failed to download the database. Status code: {response.status_code}")
-        from langchain_community.utilities import SQLDatabase
-
-        self.db = SQLDatabase.from_uri("sqlite:///Chinook.db")
+            raise ValueError(f"Unsupported database type: {db_type}")
+    
+    
+    def get_db(self):
+        if not self.db_uri:
+            raise ValueError("Database URI not set. Please call add_db first.")
+        self.db = SQLDatabase.from_uri(self.db_uri)
     
     def define_tools(self):
 
@@ -252,8 +302,8 @@ class SQLAgentTest:
         print("--------------------------------Final answer submitted--------------------------------")
         return {"messages": state["messages"] + [AIMessage(content = f"{submit_final_answer_result.final_answer}")]}
     
-    def main(self):
-        self.db_connect()
+    def graph_workflow(self, user_query: str):
+        self.get_db()
         self.define_tools()
         
 
@@ -263,26 +313,25 @@ class SQLAgentTest:
         workflow.add_node("generate_query", self.generate_query)
         workflow.add_node("execute_query", self.execute_query)
         workflow.add_node("submit_final_answer", self.submit_final_answer)
-        workflow.add_node("examine_query", self.examine_query)
 
         workflow.add_edge(START, "get_all_tables")
         workflow.add_edge("get_all_tables", "get_schema_for_all_tables")
         workflow.add_edge("get_schema_for_all_tables", "generate_query")
-        workflow.add_edge("generate_query", "examine_query")
-        workflow.add_edge("examine_query", "execute_query")
+        workflow.add_edge("generate_query", "execute_query")
         workflow.add_edge("execute_query", "submit_final_answer")
         workflow.add_edge("submit_final_answer", END)
         app = workflow.compile()
 
-        response = app.invoke({"messages": [HumanMessage(content = "Top 10 artists with highest number of unsold tracks")]})
+        response = app.invoke({"messages": [HumanMessage(content = user_query)]})
         print("--------------------------------Final response--------------------------------")
         query_result = response["messages"][-1].content
         query_used = response["messages"][-3].content
 
-        print(query_used)
-        print(query_result)
+        return query_result, query_used
         
 
 if __name__ == "__main__":
-    agent = SQLAgentTest()
-    agent.main()
+    agent = SQLAgent()
+    query_result, query_used = agent.graph_workflow("Led Zeppelin's vs Queen's total sales and number of tracks sold in every year")
+    print(query_result)
+    print(query_used)

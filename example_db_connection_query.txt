@@ -1,0 +1,77 @@
+# sqlite
+
+POST http://your-api.com/connect-db
+Content-Type: application/json
+
+{
+    "db_type": "sqlite",
+    "connection_params": {
+        "db_path": "path/to/your/database.db"
+    }
+}
+
+// Alternative with URL download
+{
+    "db_type": "sqlite",
+    "connection_params": {
+        "url": "https://example.com/your-database.db"
+    }
+}
+
+#postgresql
+
+POST http://your-api.com/connect-db
+Content-Type: application/json
+
+{
+    "db_type": "postgresql",
+    "connection_params": {
+        "user": "your_username",
+        "password": "your_password",
+        "host": "localhost",
+        "port": "5432",
+        "database": "your_database_name"
+    }
+}
+
+#mysql
+
+POST http://your-api.com/connect-db
+Content-Type: application/json
+
+{
+    "db_type": "mysql",
+    "connection_params": {
+        "user": "your_username",
+        "password": "your_password",
+        "host": "localhost",
+        "port": "3306",
+        "database": "your_database_name"
+    }
+}
+
+#mssql
+
+POST http://your-api.com/connect-db
+Content-Type: application/json
+
+{
+    "db_type": "mssql",
+    "connection_params": {
+        "user": "your_username",
+        "password": "your_password",
+        "host": "localhost",
+        "port": "1433",
+        "database": "your_database_name",
+        "driver": "ODBC Driver 17 for SQL Server"  // Optional, defaults to this value
+    }
+}
+
+# query
+
+POST http://your-api.com/query
+Content-Type: application/json
+
+{
+    "query": "What are the total sales for each product category?"
+}
