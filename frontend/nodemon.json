@@ -1,0 +1,16 @@
+{
+    "watch": [
+      "pages/**/*.{js,ts,jsx,tsx}",
+      "components/**/*.{js,ts,jsx,tsx}",
+      "styles/**/*.{css,scss}",
+      "lib/**/*.{js,ts}",
+      "public/**/*"
+    ],
+    "ext": "js,json,ts,jsx,tsx,css,scss",
+    "ignore": [
+      ".git",
+      "node_modules/**/node_modules",
+      ".next"
+    ],
+    "exec": "next dev"
+  }

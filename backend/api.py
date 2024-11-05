@@ -2,9 +2,19 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from sql_agent import SQLAgent
 from typing import Optional, Dict
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
+
 
 app = FastAPI()
 sql_agent = SQLAgent()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class DatabaseConnection(BaseModel):
     db_type: str
