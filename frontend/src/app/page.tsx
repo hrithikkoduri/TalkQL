@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { 
-  ServerIcon,
-  CheckCircleIcon,
-  CircleStackIcon
-} from '@heroicons/react/24/outline';
-import Image from 'next/image';
+import { useState } from 'react';  // Removed useEffect since we don't need it anymore
+import { Header } from '@/components/layout/Header';
+import { DatabaseGrid } from '@/components/database/DatabaseGrid';
+import { ConnectionForm } from '@/components/database/ConnectionForm';
+import { LoadingOverlay } from '@/components/database/LoadingOverlay';
+import { DBType } from '@/types/database';
+import { ServerIcon, CheckCircleIcon, BeakerIcon } from '@heroicons/react/24/outline';
 
-type DBType = 'sqlite' | 'mysql' | 'postgresql' | 'mssql';
 const dbLogos = {
   sqlite: '/images/databases/sqlite.png',
   mysql: '/images/databases/mysql.png',
@@ -16,60 +15,17 @@ const dbLogos = {
   mssql: '/images/databases/mssql.png',
 } as const;
 
-interface DBParams {
-  sqlite: {
-    url?: string;
-    db_path?: string;
-  };
-  mysql: {
-    user: string;
-    password: string;
-    host: string;
-    port: string;
-    database: string;
-  };
-  postgresql: {
-    user: string;
-    password: string;
-    host: string;
-    port: string;
-    database: string;
-  };
-  mssql: {
-    user: string;
-    password: string;
-    host: string;
-    port: string;
-    database: string;
-    driver: string;
-  };
-}
-
-
-
 export default function Home() {
-  // ... existing state ...
   const [selectedDB, setSelectedDB] = useState<DBType | null>(null);
   const [dbParams, setDBParams] = useState<Record<string, string>>({});
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
-
-  // Clear success message after 2 seconds
-  useEffect(() => {
-    if (connectionMessage && isConnected) {  // Only clear if it's a success message
-      const timer = setTimeout(() => {
-        setConnectionMessage(null);
-        setIsConnected(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [connectionMessage, isConnected]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDBConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsConnecting(true);
-    setConnectionMessage(null); // Clear any existing messages
+    setError(null);
     
     try {
       const response = await fetch('http://localhost:8000/add-database', {
@@ -86,208 +42,107 @@ export default function Home() {
       const data = await response.json();
       
       if (response.ok) {
-        setIsConnected(true);
-        setConnectionMessage(data.message || 'Database connected successfully');
+        setIsConnected(true);  // Directly set connected state on success
       } else {
-        setIsConnected(false);
-        setConnectionMessage(data.detail || 'Failed to connect to database');
+        setError(data.detail || 'Failed to connect to database');
       }
     } catch (error) {
-      setIsConnected(false);
-      setConnectionMessage('Error connecting to database');
+      setError('Error connecting to database');
       console.error('Error connecting to database:', error);
     } finally {
       setIsConnecting(false);
     }
   };
 
-
-  const renderDBParamsForm = () => {
-    if (!selectedDB) return null;
-
-    const paramFields = {
-      sqlite: ['url', 'db_path'],
-      mysql: ['user', 'password', 'host', 'port', 'database'],
-      postgresql: ['user', 'password', 'host', 'port', 'database'],
-      mssql: ['user', 'password', 'host', 'port', 'database', 'driver'],
-    };
-
-
-    return (
-      <form onSubmit={handleDBConnect} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          {paramFields[selectedDB].map((field) => (
-            <div key={field} className="space-y-1">
-              <label 
-                htmlFor={field}
-                className="block text-sm font-medium text-gray-700"
-              >
-                {field.charAt(0).toUpperCase() + field.slice(1)}
-              </label>
-              <input
-                type={field === 'password' ? 'password' : 'text'}
-                id={field}
-                value={dbParams[field] || ''}
-                onChange={(e) => setDBParams(prev => ({
-                  ...prev,
-                  [field]: e.target.value
-                }))}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
-                placeholder={`Enter ${field}`}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isConnecting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isConnecting ? 'Connecting...' : 'Connect Database'}
-          </button>
-        </div>
-      </form>
-    );
-  };
-
   return (
-    <main className="min-h-screen bg-gray-50 py-1">
-      <div className={`transition-all duration-500 mx-auto px-2 ${
-        selectedDB ? 'max-w-5xl' : 'max-w-2xl'  // Changed from max-w-4xl to max-w-3xl
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-8 pb-12 px-4">
+      <div className={`transition-all duration-500 mx-auto ${
+        selectedDB ? 'max-w-6xl' : 'max-w-2xl'
       }`}>
-        {/* Header with Logo */}
-        <div className="text-center">
-          {/* Logo */}
-          <div className="flex justify-center">
-            <div className="relative w-40 h-40"> {/* Adjust size as needed */}
-              <Image
-                src="/images/logo/TalkQL_logo.png"
-                alt="TalkQL Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
+        <Header />
+        
+       
+          {!isConnected ? (
+          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-8">
+          <div className="text-center space-y-4 mb-12">
+            <h2 className="text-4xl font-bold text-gray-900">
+              Database Connection Hub
+            </h2>
+            <p className="text-lg text-gray-600">
+              Connect to your preferred database and start querying
+            </p>
+            <p className="text-gray-500">
+              Select your database type and enter connection details
+            </p>
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Database Connection Hub
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Connect to your preferred database and start querying
-          </p>
-        </div>
-
-        {!isConnected ? (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            {/* Centered heading */}
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 flex items-center justify-center gap-2">
-                <ServerIcon className="h-6 w-6 text-blue-500" />
-                Connect to Database
-              </h2>
-            </div>
             
-            {/* Connection message */}
-            {connectionMessage && (
-              <div 
-                className={`mb-6 p-4 rounded-lg flex items-center justify-center space-x-2 ${
-                  connectionMessage.includes('successfully') 
-                    ? 'bg-green-50 text-green-700 border border-green-200' 
-                    : 'bg-red-50 text-red-700 border border-red-200'
-                }`}
-                role="alert"
-              >
-                {connectionMessage.includes('successfully') ? (
-                  <CheckCircleIcon className="h-5 w-5" />
-                ) : (
+            {/* Error message with enhanced styling */}
+            {error && (
+              <div className="mb-8 p-4 rounded-xl flex items-center space-x-3 bg-red-50 text-red-700 border border-red-100 shadow-sm animate-shake">
+                <div className="flex-shrink-0">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                )}
-                <p className="font-medium">{connectionMessage}</p>
+                </div>
+                <p className="text-sm font-medium">{error}</p>
               </div>
             )}
 
-             {/* Flex container - Updated with conditional max-width */}
+            {/* Main content container with enhanced styling */}
             <div className={`flex gap-8 transition-all duration-500 ease-in-out ${
-              selectedDB ? 'max-w-5xl' : 'max-w-2xl mx-auto'  // Changed from max-w-4xl to max-w-3xl
+              selectedDB ? 'max-w-6xl' : 'max-w-2xl mx-auto'
             }`}>
-              {/* Database Selection */}
-              <div className={`transition-all duration-500 ${
-                selectedDB ? 'w-1/2' : 'w-full'
-              }`}>
-                <div className="grid grid-cols-2 gap-6"> {/* Reduced gap from 8 to 6 */}
-                  {(['sqlite', 'mysql', 'postgresql', 'mssql'] as const).map((dbType) => (
-                    <button
-                      key={dbType}
-                      onClick={() => setSelectedDB(dbType)}
-                      disabled={isConnecting}
-                      className={`
-                        p-8 rounded-lg transition-all duration-200 flex items-center justify-center
-                        ${selectedDB === dbType 
-                          ? 'bg-blue-50 border-2 border-blue-500 shadow-sm' 
-                          : 'border-2 border-gray-100 hover:border-blue-200 hover:bg-blue-50/50'
-                        }
-                        ${isConnecting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                        aspect-square
-                      `}
-                    >
-                      <div className="relative w-40 h-40"> {/* Slightly reduced from w-48 h-48 */}
-                        <Image
-                          src={dbLogos[dbType]}
-                          alt={`${dbType} database`}
-                          fill
-                          className="object-contain p-6"
-                          priority
-                        />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <DatabaseGrid
+                selectedDB={selectedDB}
+                isConnecting={isConnecting}
+                onSelectDB={setSelectedDB}
+                dbLogos={dbLogos}
+              />
 
-              {/* Connection Form - Slides in from right */}
+              {/* Connection Form with enhanced styling */}
               <div className={`transition-all duration-500 ease-in-out ${
                 selectedDB 
                   ? 'w-1/2 opacity-100 translate-x-0' 
                   : 'w-0 opacity-0 translate-x-full'
               }`}>
                 {selectedDB && (
-                  <div className="bg-gray-50 rounded-lg p-8 border border-gray-100 h-full">
-                    <h3 className="text-lg font-medium text-gray-800 mb-6">
-                      Connection Details
-                    </h3>
-                    {renderDBParamsForm()}
+                  <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow-sm">
+                        <BeakerIcon className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-medium bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
+                        Connection Details
+                      </h3>
+                    </div>
+                    <ConnectionForm
+                      selectedDB={selectedDB}
+                      dbParams={dbParams}
+                      isConnecting={isConnecting}
+                      onParamChange={(field, value) => 
+                        setDBParams(prev => ({ ...prev, [field]: value }))
+                      }
+                      onSubmit={handleDBConnect}
+                    />
                   </div>
                 )}
               </div>
             </div>
-          
-
-            {/* Loading Overlay */}
-            {isConnecting && (
-              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-xl p-8 max-w-sm w-full mx-4">
-                  <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mb-4"></div>
-                    <p className="text-lg text-gray-700">Connecting to database...</p>
-                    <p className="text-sm text-gray-500 mt-2">This may take a few moments</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100">
-            <div className="flex items-center space-x-3 mb-6">
-              <CheckCircleIcon className="h-6 w-6 text-green-500" />
-              <h2 className="text-xl font-semibold text-gray-800">
-                Connected Successfully!
-              </h2>
+          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-12 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+            <div className="absolute inset-0 bg-grid-black bg-grid -z-10" />            
+            <div className="inline-flex items-center justify-center p-4 bg-green-50 rounded-full mb-6 shadow-sm">
+              <CheckCircleIcon className="h-8 w-8 text-green-500" />
             </div>
-            {/* Add your query form components here */}
+            <h2 className="text-2xl font-semibold text-green-700 mb-3">
+              Connected Successfully!
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Your database is now connected and ready for queries
+            </p>
+            <div className="h-1 w-24 bg-gradient-to-r from-green-500 to-emerald-500 mx-auto rounded-full" />
           </div>
         )}
       </div>
