@@ -1,13 +1,16 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from requests import request
 from sql_agent import SQLAgent
 from typing import Optional, Dict
 from fastapi.middleware.cors import CORSMiddleware  # Add this import
 import sqlite3
 import json
+from langchain_openai import ChatOpenAI
+import logging
 
-
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 app = FastAPI()
 sql_agent = SQLAgent()
 
@@ -18,6 +21,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
 class DatabaseConnection(BaseModel):
     db_type: str
@@ -29,6 +33,10 @@ class Query(BaseModel):
 class QueryResponse(BaseModel):
     query_result: str
     query_used: str
+
+class isSingularResponse(BaseModel):
+    is_singular: bool = Field(
+        ..., description="Whether the query result is singular in nature i.e. a single datapoint or has multiple datapoints")
 
 def init_connection_store():
     conn = sqlite3.connect('connection_store.db')
@@ -50,18 +58,34 @@ async def check_connection():
         if result:
             db_type, connection_params = result
             params = json.loads(connection_params)
-            return {
-                "is_connected": True,
-                "db_type": db_type,
-                "database_name": params.get('database') or params.get('db_path') or 'Database'
-            }
+            
+            # Reinitialize the SQL agent connection
+            try:
+                sql_agent.add_db(
+                    db_type=db_type,
+                    **params
+                )
+                sql_agent.get_db()  # Initialize the database connection
+                
+                return {
+                    "is_connected": True,
+                    "db_type": db_type,
+                    "database_name": params.get('database') or params.get('db_path') or 'Database'
+                }
+            except Exception as e:
+                logger.error(f"Error reinitializing database connection: {str(e)}")
+                return {
+                    "is_connected": False,
+                    "db_type": None,
+                    "database_name": None
+                }
         return {
             "is_connected": False,
             "db_type": None,
             "database_name": None
         }
     except Exception as e:
-        print(f"Error checking connection: {str(e)}")
+        logger.error(f"Error checking connection: {str(e)}")
         return {
             "is_connected": False,
             "db_type": None,
@@ -121,12 +145,44 @@ async def add_database(connection: DatabaseConnection):
 @app.post("/query", response_model=QueryResponse)
 async def execute_query(query: Query):
     try:
+        # Check if database connection is lost and reconnect if necessary
+        if not sql_agent.db:
+            conn = sqlite3.connect('db_store.sqlite')
+            cursor = conn.cursor()
+            cursor.execute('SELECT db_type, connection_params FROM connections LIMIT 1')
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                db_type, connection_params = result
+                params = json.loads(connection_params)
+                sql_agent.add_db(db_type=db_type, **params)
+                sql_agent.get_db()
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="No database connection established"
+                )
+        
+        # Log before the operation
+        logger.info(f"Received query: {query.query}")
+        
         query_result, query_used = sql_agent.graph_workflow(query.query)
+        logger.info(f"Query executed. Result: {query_result[:100]}...")
+        
+        try:
+            is_singular = llm.with_structured_output(isSingularResponse).invoke(query_result)
+            logger.info(f"Singularity check: {is_singular}")
+        except Exception as e:
+            logger.error(f"Error in singularity check: {str(e)}")
+            is_singular = None
+        
         return QueryResponse(
             query_result=query_result,
             query_used=query_used
         )
     except Exception as e:
+        logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
