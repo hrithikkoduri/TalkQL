@@ -1,10 +1,15 @@
 import { Logo } from './Logo';
-
-export const Header = () => (
-  <div className="text-center mb-8"> {/* Increased bottom margin */}
-    <Logo />
-    <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500 mt-3">
-      Data Answers, Simplified.
-    </h2>
-  </div>
-);
+interface HeaderProps {
+    minimal?: boolean;
+    isTransitioning?: boolean;
+  }
+  
+  export const Header = ({ minimal = false, isTransitioning = false }: HeaderProps) => (
+    <header className={`transition-all duration-500 ${
+      isTransitioning 
+        ? 'absolute top-8 left-8' 
+        : 'py-6'
+    }`}>
+      <Logo minimal={minimal} isTransitioning={isTransitioning} />
+    </header>
+  );
