@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';  // Removed useEffect since we don't need it anymore
+import { useState } from 'react';
 import { Header } from '@/components/layout/Header';
 import { DatabaseGrid } from '@/components/database/DatabaseGrid';
 import { ConnectionForm } from '@/components/database/ConnectionForm';
@@ -22,6 +22,20 @@ export default function Home() {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const handleDBSelect = (dbType: DBType) => {
+    if (selectedDB === dbType) {
+      // If clicking the same database again, close the form
+      setSelectedDB(null);
+      setDBParams({}); // Clear form data when closing
+      setError(null); // Clear any errors
+    } else {
+      // If clicking a different database, show its form
+      setSelectedDB(dbType);
+      setDBParams({}); // Clear previous form data
+      setError(null); // Clear any errors
+    }
+  };
+
   const handleDBConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsConnecting(true);
@@ -42,7 +56,7 @@ export default function Home() {
       const data = await response.json();
       
       if (response.ok) {
-        setIsConnected(true);  // Directly set connected state on success
+        setIsConnected(true);
       } else {
         setError(data.detail || 'Failed to connect to database');
       }
@@ -61,22 +75,20 @@ export default function Home() {
       }`}>
         <Header />
         
-       
-          {!isConnected ? (
+        {!isConnected ? (
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-8">
-          <div className="text-center space-y-4 mb-12">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Database Connection Hub
-            </h2>
-            <p className="text-lg text-gray-600">
-              Connect to your preferred database and start querying
-            </p>
-            <p className="text-gray-500">
-              Select your database type and enter connection details
-            </p>
-          </div>
+            <div className="text-center space-y-4 mb-12">
+              <h2 className="text-4xl font-bold text-gray-900">
+                Database Connection Hub
+              </h2>
+              <p className="text-lg text-gray-600">
+                Connect to your preferred database and start querying
+              </p>
+              <p className="text-gray-500">
+                Select your database type and enter connection details
+              </p>
+            </div>
             
-            {/* Error message with enhanced styling */}
             {error && (
               <div className="mb-8 p-4 rounded-xl flex items-center space-x-3 bg-red-50 text-red-700 border border-red-100 shadow-sm animate-shake">
                 <div className="flex-shrink-0">
@@ -88,18 +100,14 @@ export default function Home() {
               </div>
             )}
 
-            {/* Main content container with enhanced styling */}
-            <div className={`flex gap-8 transition-all duration-500 ease-in-out ${
-              selectedDB ? 'max-w-6xl' : 'max-w-2xl mx-auto'
-            }`}>
+            <div className="flex gap-8">
               <DatabaseGrid
                 selectedDB={selectedDB}
                 isConnecting={isConnecting}
-                onSelectDB={setSelectedDB}
+                onSelectDB={handleDBSelect}
                 dbLogos={dbLogos}
               />
 
-              {/* Connection Form with enhanced styling */}
               <div className={`transition-all duration-500 ease-in-out ${
                 selectedDB 
                   ? 'w-1/2 opacity-100 translate-x-0' 
@@ -132,7 +140,6 @@ export default function Home() {
         ) : (
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-12 text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
-            <div className="absolute inset-0 bg-grid-black bg-grid -z-10" />            
             <div className="inline-flex items-center justify-center p-4 bg-green-50 rounded-full mb-6 shadow-sm">
               <CheckCircleIcon className="h-8 w-8 text-green-500" />
             </div>
@@ -146,6 +153,7 @@ export default function Home() {
           </div>
         )}
       </div>
+      <LoadingOverlay isVisible={isConnecting} />
     </main>
   );
 }
