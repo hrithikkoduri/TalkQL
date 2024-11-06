@@ -3,6 +3,7 @@ import { LoadingMessage } from './LoadingMessage';
 import { useEffect, useRef, useState } from 'react';
 import remarkGfm from 'remark-gfm';
 import { ClipboardIcon, ClipboardDocumentCheckIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { VizModal } from './VizModal';
 
 interface ChatMessagesProps {
   messages: Array<{
@@ -142,6 +143,7 @@ const CopyButton = ({ text, label }: CopyButtonProps) => {
 
 export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [selectedViz, setSelectedViz] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -292,11 +294,20 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
                                 </div>
                                 <VizControls vizData={message.viz_result} />
                               </div>
-                              <div className="overflow-hidden rounded-lg border border-gray-100">
+                              <div 
+                                className="overflow-hidden rounded-lg border border-gray-100 cursor-pointer
+                                  hover:border-blue-200/50 transition-all duration-300"
+                                onClick={() => {
+                                  if (message.viz_result) {
+                                    setSelectedViz(message.viz_result);
+                                  }
+                                }}
+                              >
                                 <img 
                                   src={message.viz_result} 
                                   alt="Data Visualization" 
-                                  className="w-full max-w-3xl mx-auto hover:scale-102 transition-transform duration-300"
+                                  className="w-full max-w-2xl mx-auto hover:scale-102 transition-transform duration-300"
+                                  style={{ maxHeight: '400px', objectFit: 'contain' }}
                                 />
                               </div>
                             </div>
@@ -334,6 +345,11 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
       ))}
       {isLoading && <LoadingMessage />}
       <div ref={messagesEndRef} />
+      <VizModal 
+        isOpen={!!selectedViz}
+        onClose={() => setSelectedViz(null)}
+        imageUrl={selectedViz || ''}
+      />
     </div>
   );
 };

@@ -5,7 +5,7 @@ interface LogoProps {
   }
   
   export const Logo = ({ minimal = false, className = '', isTransitioning = false }: LogoProps) => (
-    <div className={`fixed transition-all duration-500 z-[100] ${
+    <div className={`fixed transition-all duration-500 z-[50] ${
       isTransitioning 
         ? 'top-4 left-8' 
         : 'top-8 left-1/2 -translate-x-1/2'

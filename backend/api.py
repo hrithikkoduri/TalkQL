@@ -166,7 +166,8 @@ async def execute_query(query: Query):
                     status_code=400,
                     detail="No database connection established"
                 )
-        
+            
+        viz_result = None
         # Log before the operation
         logger.info(f"Received query: {query.query}")
         
@@ -180,24 +181,21 @@ async def execute_query(query: Query):
             logger.error(f"Error in singularity check: {str(e)}")
             is_singular = None
         
-        if not is_singular.is_singular:
+        # Only generate visualization for non-singular results
+        if is_singular and not is_singular.is_singular:
             logger.info("Query result is not singular, generating visualization...")
             viz_result = viz_agent.graph_workflow(query_result)
-            logger.info(f"Visualization generated: {viz_result[:100]}...")  # Log first 100 chars of viz_result
-            
-        if viz_result and viz_result.startswith('data:image'):
-            logger.info("Valid visualization data URL generated")
-            return QueryResponse(
-                query_result=query_result,
-                query_used=query_used,
-                viz_result=viz_result
-            )
+            logger.info(f"Visualization generated: {viz_result[:100] if viz_result else 'None'}...")
         else:
-            logger.error("Invalid visualization data generated")
-            return QueryResponse(
-                query_result=query_result,
-                query_used=query_used
-            )
+            logger.info("Query result is singular, skipping visualization")
+        
+        # Return response with or without visualization
+        return QueryResponse(
+            query_result=query_result,
+            query_used=query_used,
+            viz_result=viz_result if viz_result and viz_result.startswith('data:image') else None
+        )
+        
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
