@@ -109,16 +109,67 @@ const VizControls = ({ vizData }: VizControlsProps) => {
 
 interface CopyButtonProps {
   text: string;
-  label?: string;
+  label: string;
+  vizData?: string;
 }
 
-const CopyButton = ({ text, label }: CopyButtonProps) => {
+const CopyButton = ({ text, label, vizData }: CopyButtonProps) => {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      if (vizData) {
+        // Create HTML content with both text and image
+        const htmlContent = `
+          <div>
+            <pre style="white-space: pre-wrap;">${text}</pre>
+            ${vizData ? `<img src="${vizData}" />` : ''}
+          </div>
+        `;
+
+        // Create clipboard data
+        const clipboardData = new ClipboardItem({
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+          'text/html': new Blob([htmlContent], { type: 'text/html' }),
+        });
+
+        // Copy to clipboard
+        await navigator.clipboard.write([clipboardData]);
+      } else {
+        // If no image, just copy text
+        await navigator.clipboard.writeText(text);
+      }
+      
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // Fallback method
+      try {
+        const tempElement = document.createElement('div');
+        tempElement.innerHTML = `
+          <pre style="white-space: pre-wrap;">${text}</pre>
+          ${vizData ? `<img src="${vizData}" />` : ''}
+        `;
+        document.body.appendChild(tempElement);
+        
+        const range = document.createRange();
+        range.selectNode(tempElement);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+        
+        document.execCommand('copy');
+        document.body.removeChild(tempElement);
+        
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (fallbackErr) {
+        console.error('Fallback copy failed:', fallbackErr);
+        // Last resort: just copy text
+        navigator.clipboard.writeText(text);
+      }
+    }
   };
 
   return (
@@ -136,7 +187,7 @@ const CopyButton = ({ text, label }: CopyButtonProps) => {
       ) : (
         <ClipboardIcon className="h-4 w-4" />
       )}
-      {label || 'Copy'}
+      {copied ? 'Copied!' : label}
     </button>
   );
 };
@@ -155,8 +206,9 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
 
   const extractQueryAndResult = (content: string) => {
     const queryMatch = content.match(/```sql\n([\s\S]*?)\n```/);
-    const query = queryMatch ? queryMatch[1] : '';
-    const result = content.split('Result:\n')[1] || '';
+    const query = queryMatch ? queryMatch[1].trim() : '';
+    const resultMatch = content.split('Result:\n');
+    const result = resultMatch.length > 1 ? resultMatch[1].trim() : '';
     return { query, result };
   };
 
@@ -183,9 +235,19 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
                     const { query, result } = extractQueryAndResult(message.content);
                     return (
                       <div className="space-y-6 max-w-[90%] mx-auto">
-                      <div className="flex justify-end mb-4">
-                        <CopyButton text={`${query}\n\n${result}`} label="Copy All" />
-                      </div>
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                              Result
+                            </span>
+                            <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
+                          </div>
+                          <CopyButton 
+                            text={`Query:\n${query}\n\nResult:\n${result}`} 
+                            label="Copy All" 
+                            vizData={message.viz_result}
+                          />
+                        </div>
                       <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
                       <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-2">

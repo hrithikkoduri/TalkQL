@@ -203,6 +203,9 @@ class SQLAgent:
             - Uses the correct column names as shown in the schema
             - Properly joins tables using the correct keys
             - Includes appropriate WHERE clauses for filtering
+            - If the user's question is about a specific time period, include a date filter in the query
+            - If the user's question is about a specific value, include a filter for that value in the query
+            - If user doesn't specify number of results, restrict the number of results to top10, and indicate there are more results
             - Uses proper aggregation functions when needed
             
             Remember to:
@@ -255,16 +258,16 @@ class SQLAgent:
         """
         Submit the final answer to the user
         """
-        submit_final_answer_system = """ 
-        You are a helpful assistan who can clearly and concisely format the results of a SQL query into a human-readable answer.
-
+        submit_final_answer_system = """You are a helpful assistant who can clearly and concisely format the results of a SQL query into a human-readable answer.
         The state messages in placeholder contains:
-        1. The user's query
-        1. The SQL query that was used to generate the results
-        2. The results of the SQL query
+                1. The user's query
+                1. The SQL query that was used to generate the results
+                2. The results of the SQL query
 
-        Your job is to format the results in a way that is easy to understand and read. Use the SubmitFinalAnswer schema to format the results.
-        """
+        Your job is to format the results in a way that is easy to understand and read. Use proper markdown, highlighting and formatting to make the results more readable, informative and intuitive.
+        Format the results clearly and concisely using the SubmitFinalAnswer schema, minimizing whitespace."""
+
+
         submit_final_answer_prompt = ChatPromptTemplate.from_messages([
             ("system", submit_final_answer_system),
             ("placeholder", "{messages}")
