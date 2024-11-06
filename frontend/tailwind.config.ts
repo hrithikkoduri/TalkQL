@@ -9,16 +9,9 @@ const config: Config = {
   theme: {
     extend: {
       animation: {
-        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
         'gradient': 'gradient 6s linear infinite',
       },
       keyframes: {
-        shake: {
-          '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
-          '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
-          '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
-          '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
-        },
         gradient: {
           '0%, 100%': {
             'background-size': '200% 200%',
@@ -29,6 +22,10 @@ const config: Config = {
             'background-position': 'right center'
           },
         },
+      },
+      boxShadow: {
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
       },
     },
   },

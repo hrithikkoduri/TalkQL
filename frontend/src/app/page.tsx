@@ -76,15 +76,17 @@ export default function Home() {
         <Header />
         
         {!isConnected ? (
-          <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-8">
-            <div className="text-center space-y-4 mb-12">
-              <h2 className="text-4xl font-bold text-gray-900">
+         <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300">
+         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
+            <div className="text-center space-y-4 mb-8">
+              <h2 className="text-3xl font-bold text-gray-500">
                 Database Connection Hub
               </h2>
-              <p className="text-lg text-gray-600">
-                Connect to your preferred database and start querying
+              <p className="text-xl text-gray-400">
+                Unlock the power of natural conversations with your data
               </p>
-              <p className="text-gray-500">
+              <p className="text-gray-400">
                 Select your database type and enter connection details
               </p>
             </div>
@@ -139,7 +141,8 @@ export default function Home() {
           </div>
         ) : (
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100/50 p-12 text-center relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-green-400/40 to-transparent" />
+            <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerals-400/40 to-transparent" />            
             <div className="inline-flex items-center justify-center p-4 bg-green-50 rounded-full mb-6 shadow-sm">
               <CheckCircleIcon className="h-8 w-8 text-green-500" />
             </div>
