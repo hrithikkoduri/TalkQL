@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from requests import request
 from sql_agent import SQLAgent
+from visualization_agent import VisualizationAgent
 from typing import Optional, Dict
 from fastapi.middleware.cors import CORSMiddleware  # Add this import
 import sqlite3
@@ -13,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 app = FastAPI()
 sql_agent = SQLAgent()
+viz_agent = VisualizationAgent()
 
 app.add_middleware(
     CORSMiddleware,
@@ -33,6 +35,7 @@ class Query(BaseModel):
 class QueryResponse(BaseModel):
     query_result: str
     query_used: str
+    viz_result: Optional[str] = None
 
 class isSingularResponse(BaseModel):
     is_singular: bool = Field(
@@ -177,10 +180,24 @@ async def execute_query(query: Query):
             logger.error(f"Error in singularity check: {str(e)}")
             is_singular = None
         
-        return QueryResponse(
-            query_result=query_result,
-            query_used=query_used
-        )
+        if not is_singular.is_singular:
+            logger.info("Query result is not singular, generating visualization...")
+            viz_result = viz_agent.graph_workflow(query_result)
+            logger.info(f"Visualization generated: {viz_result[:100]}...")  # Log first 100 chars of viz_result
+            
+        if viz_result and viz_result.startswith('data:image'):
+            logger.info("Valid visualization data URL generated")
+            return QueryResponse(
+                query_result=query_result,
+                query_used=query_used,
+                viz_result=viz_result
+            )
+        else:
+            logger.error("Invalid visualization data generated")
+            return QueryResponse(
+                query_result=query_result,
+                query_used=query_used
+            )
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

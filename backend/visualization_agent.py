@@ -8,6 +8,15 @@ from langgraph.graph.message import AnyMessage, add_messages
 from typing import Sequence
 from pydantic import BaseModel, Field
 import pandas as pd
+import logging
+import io  # Add this import
+import base64  # Add this import
+import matplotlib
+matplotlib.use('Agg')  # Set this before importing pyplot
+import matplotlib.pyplot as plt
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class State(TypedDict):
     messages: Annotated[Sequence[AnyMessage], add_messages]
@@ -28,8 +37,31 @@ class VisualizationAgent:
         print("---------------------------------------------------------------------------")
         
         create_python_code_system = """You are a data visualization expert. Using the provided query result, 
-        create a visualization using Python libraries (matplotlib, seaborn, or plotly).
+        create a visually appealing visualization using matplotlib.
         The data will be provided as a string that you need to convert to a pandas DataFrame.
+
+        Important guidelines:
+        1. Do not use plt.show()
+        2. Use plt.figure() with figsize=(12, 7)
+        3. Use a modern style: plt.style.use('seaborn')
+        4. Apply these aesthetic improvements:
+        - Use appealing color palettes (e.g., 'Set3', 'Pastel1', or 'husl')
+        - Add grid with alpha=0.3 for better readability
+        - Use clean, readable fonts (e.g., 'Helvetica' or 'Arial')
+        - Add subtle background colors
+        - Use proper spacing and padding
+        - Include clear titles and labels with appropriate font sizes
+        5. Enhance readability:
+        - Rotate x-labels if needed using plt.xticks(rotation=45)
+        - Add value labels on bars for bar charts
+        - Use proper legend positioning
+        - Format numbers with appropriate decimal places
+        6. Additional styling:
+        - Add a light grid: plt.grid(True, alpha=0.3)
+        - Use plt.tight_layout() for proper spacing
+        - Set facecolor='#f8f9fa' for a light background
+        - Add subtle spines: [ax.spines[spine].set_alpha(0.3) for spine in ['top', 'right']]
+
         Return only the Python code needed to create the visualization."""
 
         create_python_code_prompt = ChatPromptTemplate.from_messages([
@@ -44,38 +76,38 @@ class VisualizationAgent:
         return {"messages": state["messages"] + [AIMessage(content = f"{create_python_code_result.code}")]}
     
     def create_visualization(self, state: State):
-        """Create visualization based on the python code"""
         messages = state["messages"]
-        print("---------------------------Creating visualization---------------------------")
-        print(f"Messages inside the create_visualization function: {messages}")
-        print("---------------------------------------------------------------------------")
         python_code = messages[-1].content
 
         try:
-            # Execute the Python code using PythonREPL
+            # Set global font to a modern, clean option
+            plt.rcParams['font.family'] = 'sans-serif'
+            plt.rcParams['font.sans-serif'] = ['Arial']
+            
+            # Execute the visualization code
             output = self.python_repl.run(python_code)
             
-            # Save the current figure to a bytes buffer
-            import io
-            import base64
-            import matplotlib.pyplot as plt
-            
+            # Save with high quality settings
             buf = io.BytesIO()
-            plt.savefig(buf, format='png', bbox_inches='tight', dpi=300)
+            plt.savefig(buf, 
+                    format='png',
+                    bbox_inches='tight',
+                    dpi=300,
+                    facecolor='#f8f9fa',
+                    edgecolor='none',
+                    pad_inches=0.2)
             buf.seek(0)
             
-            # Convert to base64 and create a proper data URL
             img_str = base64.b64encode(buf.getvalue()).decode('utf-8')
             img_data_url = f"data:image/png;base64,{img_str}"
             
-            # Clear the current figure to avoid memory issues
-            plt.close()
+            plt.close('all')
             
             return {"messages": state["messages"] + [AIMessage(content=img_data_url)]}
                 
         except Exception as e:
-            error_message = f"Error creating visualization: {str(e)}"
-            return {"messages": state["messages"] + [AIMessage(content=error_message)]}
+            logger.error(f"Error creating visualization: {str(e)}")
+            return {"messages": state["messages"] + [AIMessage(content=f"Error creating visualization: {str(e)}")]}
 
     def graph_workflow(self, query_result: str):
         workflow = StateGraph(State)

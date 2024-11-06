@@ -68,7 +68,8 @@ export default function DatabaseChat() {
           
           setMessages(prev => [...prev, { 
             role: 'assistant', 
-            content: `SQL Query Used:\n\`\`\`sql\n${data.query_used}\n\`\`\`\n\nResult:\n${formatTableName(data.query_result)}`
+            content: `SQL Query Used:\n\`\`\`sql\n${data.query_used || 'Query not available'}\n\`\`\`\n\nResult:\n${formatTableName(data.query_result)}`,
+            viz_result: data.viz_result
           }]);
         } catch (error) {
             console.error('Error querying database:', error);

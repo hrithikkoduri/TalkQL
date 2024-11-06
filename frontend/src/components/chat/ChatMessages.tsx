@@ -2,16 +2,109 @@ import ReactMarkdown from 'react-markdown';
 import { LoadingMessage } from './LoadingMessage';
 import { useEffect, useRef, useState } from 'react';
 import remarkGfm from 'remark-gfm';
-
-import { ClipboardIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import { ClipboardIcon, ClipboardDocumentCheckIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 interface ChatMessagesProps {
   messages: Array<{
     role: 'user' | 'assistant';
     content: string;
+    viz_result?: string;
   }>;
   isLoading: boolean;
 }
+
+
+// Add this new component above ChatMessages
+interface VizControlsProps {
+  vizData: string;
+}
+
+const VizControls = ({ vizData }: VizControlsProps) => {
+  const handleCopy = async () => {
+    try {
+      // Convert base64 to blob
+      const base64Data = vizData.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/png' });
+      
+      // Create ClipboardItem and copy image
+      const item = new ClipboardItem({ 'image/png': blob });
+      await navigator.clipboard.write([item]);
+    } catch (err) {
+      console.error('Failed to copy image:', err);
+    }
+  };
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyClick = () => {
+    handleCopy();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    // Convert base64 to blob
+    const base64Data = vizData.split(',')[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/png' });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'visualization.png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="flex gap-2">
+      <button
+        onClick={handleCopyClick}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg
+          transition-all duration-300 shadow-sm hover:shadow-md
+          ${copied 
+            ? 'bg-green-50 text-green-600 border border-green-200/50' 
+            : 'bg-white hover:bg-gray-50 text-gray-600 border border-gray-200/50'
+          }`}
+      >
+        {copied ? (
+          <ClipboardDocumentCheckIcon className="h-4 w-4 text-green-500" />
+        ) : (
+          <ClipboardIcon className="h-4 w-4" />
+        )}
+        {copied ? 'Copied!' : 'Copy Image'}
+      </button>
+      <button
+        onClick={handleDownload}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg
+          bg-white hover:bg-gray-50 text-gray-600 border border-gray-200/50
+          transition-all duration-300 shadow-sm hover:shadow-md"
+      >
+        <ArrowDownTrayIcon className="h-4 w-4" />
+        Download PNG
+      </button>
+    </div>
+  );
+};
+
 
 interface CopyButtonProps {
   text: string;
@@ -187,6 +280,27 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
                           >
                             {result}
                           </ReactMarkdown>
+                          {/* Add visualization display */}
+                          {message.viz_result && (
+                            <div className="mt-6 bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                              <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    Visualization
+                                  </span>
+                                  <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
+                                </div>
+                                <VizControls vizData={message.viz_result} />
+                              </div>
+                              <div className="overflow-hidden rounded-lg border border-gray-100">
+                                <img 
+                                  src={message.viz_result} 
+                                  alt="Data Visualization" 
+                                  className="w-full max-w-3xl mx-auto hover:scale-102 transition-transform duration-300"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
