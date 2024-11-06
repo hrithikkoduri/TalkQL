@@ -31,6 +31,8 @@ class DatabaseConnection(BaseModel):
 
 class Query(BaseModel):
     query: str
+    vizEnabled: bool = Field(default=True, description="Whether visualization should be generated")
+
 
 class QueryResponse(BaseModel):
     query_result: str
@@ -170,24 +172,28 @@ async def execute_query(query: Query):
         viz_result = None
         # Log before the operation
         logger.info(f"Received query: {query.query}")
+        logger.info(f"Visualization enabled: {query.vizEnabled}")
         
         query_result, query_used = sql_agent.graph_workflow(query.query)
         logger.info(f"Query executed. Result: {query_result[:100]}...")
         
-        try:
-            is_singular = llm.with_structured_output(isSingularResponse).invoke(query_result)
-            logger.info(f"Singularity check: {is_singular}")
-        except Exception as e:
-            logger.error(f"Error in singularity check: {str(e)}")
-            is_singular = None
-        
-        # Only generate visualization for non-singular results
-        if is_singular and not is_singular.is_singular:
-            logger.info("Query result is not singular, generating visualization...")
-            viz_result = viz_agent.graph_workflow(query_result)
-            logger.info(f"Visualization generated: {viz_result[:100] if viz_result else 'None'}...")
+        # Only check for singularity if visualization is enabled
+        if query.vizEnabled:
+            try:
+                is_singular = llm.with_structured_output(isSingularResponse).invoke(query_result)
+                logger.info(f"Singularity check: {is_singular}")
+                
+                # Only generate visualization if vizEnabled is True and result is not singular
+                if not is_singular.is_singular:
+                    logger.info("Query result is not singular, generating visualization...")
+                    viz_result = viz_agent.graph_workflow(query_result)
+                    logger.info(f"Visualization generated: {viz_result[:100] if viz_result else 'None'}...")
+                else:
+                    logger.info("Query result is singular, skipping visualization")
+            except Exception as e:
+                logger.error(f"Error in singularity check: {str(e)}")
         else:
-            logger.info("Query result is singular, skipping visualization")
+            logger.info("Visualization disabled, skipping visualization generation")
         
         # Return response with or without visualization
         return QueryResponse(
@@ -199,7 +205,7 @@ async def execute_query(query: Query):
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

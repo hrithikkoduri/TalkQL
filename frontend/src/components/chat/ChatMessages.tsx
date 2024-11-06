@@ -4,14 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import remarkGfm from 'remark-gfm';
 import { ClipboardIcon, ClipboardDocumentCheckIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { VizModal } from './VizModal';
+import { Message } from '@/types/chat';
 
 interface ChatMessagesProps {
-  messages: Array<{
-    role: 'user' | 'assistant';
-    content: string;
-    viz_result?: string;
-  }>;
+  messages: Message[];
   isLoading: boolean;
+  vizEnabled: boolean;
 }
 
 
@@ -192,7 +190,7 @@ const CopyButton = ({ text, label, vizData }: CopyButtonProps) => {
   );
 };
 
-export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
+export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedViz, setSelectedViz] = useState<string | null>(null);
 
@@ -345,8 +343,8 @@ export const ChatMessages = ({ messages, isLoading }: ChatMessagesProps) => {
                             {result}
                           </ReactMarkdown>
                           {/* Add visualization display */}
-                          {message.viz_result && (
-                            <div className="mt-6 bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                          {message.viz_result && message.vizEnabledState && (
+                              <div className="mt-6 bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
                               <div className="flex justify-between items-center mb-4">
                                 <div className="flex items-center gap-2">
                                   <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">

@@ -7,12 +7,12 @@ import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import { DisconnectButton } from '@/components/ui/DisconnectButton';
 import { Header } from '@/components/layout/Header';
+import { ToggleSwitch } from '@/components/common/ToggleSwitch';
+import { Message } from '@/types/chat';
 
 export default function DatabaseChat() {
-    const [messages, setMessages] = useState<Array<{
-      role: 'user' | 'assistant';
-      content: string;
-    }>>([]);
+    const [vizEnabled, setVizEnabled] = useState(true);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showInitialText, setShowInitialText] = useState(true);
     const [isEntering, setIsEntering] = useState(false);
@@ -43,17 +43,23 @@ export default function DatabaseChat() {
   
     const handleSendMessage = async (message: string) => {
         try {
-            setIsLoading(true);
-            setShowInitialText(false);
-            setMessages(prev => [...prev, { role: 'user', content: message }]);
-        
-            const response = await fetch('http://localhost:8000/query', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ query: message }),
-            });
+          setIsLoading(true);
+          setShowInitialText(false);
+          setMessages(prev => [...prev, { 
+            role: 'user', 
+            content: message 
+          }]);
+      
+          const response = await fetch('http://localhost:8000/query', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              query: message,
+              vizEnabled: vizEnabled 
+            }),
+          });
         
       
           if (!response.ok) {
@@ -69,7 +75,8 @@ export default function DatabaseChat() {
           setMessages(prev => [...prev, { 
             role: 'assistant', 
             content: `SQL Query Used:\n\`\`\`sql\n${data.query_used || 'Query not available'}\n\`\`\`\n\nResult:\n${formatTableName(data.query_result)}`,
-            viz_result: data.viz_result
+            viz_result: data.viz_result,
+            vizEnabledState: vizEnabled  // Store current visualization state
           }]);
         } catch (error) {
             console.error('Error querying database:', error);
@@ -97,6 +104,10 @@ export default function DatabaseChat() {
     return (
         <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <Logo minimal isTransitioning />
+
+          <div className="fixed top-24 left-6 z-[100] animate-fade-in">
+        <ToggleSwitch enabled={vizEnabled} setEnabled={setVizEnabled} />
+        </div>
           
           {connectedDBInfo && (
             <div className="fixed top-4 right-4 z-[100]">
@@ -114,14 +125,18 @@ export default function DatabaseChat() {
                 Start a conversation with your database
               </div>
             )}
-      
-                <div className="relative flex-1 overflow-hidden">
-            <div className="absolute inset-0 overflow-y-auto">
-                <div className="max-w-[85rem] mx-auto">
-                <ChatMessages messages={messages} isLoading={isLoading} />
-                </div>
+
+            <div className="relative flex-1 overflow-hidden">
+          <div className="absolute inset-0 overflow-y-auto">
+            <div className="max-w-[85rem] mx-auto">
+              <ChatMessages 
+                messages={messages} 
+                isLoading={isLoading} 
+                vizEnabled={vizEnabled}
+              />
             </div>
-            </div>
+          </div>
+        </div>
             
             <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           </div>
