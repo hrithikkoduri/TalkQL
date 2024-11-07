@@ -32,7 +32,7 @@ class DatabaseConnection(BaseModel):
 class Query(BaseModel):
     query: str
     vizEnabled: bool = Field(default=True, description="Whether visualization should be generated")
-
+    tabularMode: bool = Field(default=False, description="Whether to display results in tabular format")
 
 class QueryResponse(BaseModel):
     query_result: str
@@ -174,7 +174,13 @@ async def execute_query(query: Query):
         logger.info(f"Received query: {query.query}")
         logger.info(f"Visualization enabled: {query.vizEnabled}")
         
-        query_result, query_used = sql_agent.graph_workflow(query.query)
+        # Modify query if tabular mode is enabled
+        processed_query = f"{query.query} Provide result in tabular format" if query.tabularMode else query.query
+        logger.info(f"Processed query with tabular mode {query.tabularMode}: {processed_query}")
+        
+        # Execute query with modified or original query
+        query_result, query_used = sql_agent.graph_workflow(processed_query)
+        
         logger.info(f"Query executed. Result: {query_result[:100]}...")
         
         # Only check for singularity if visualization is enabled

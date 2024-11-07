@@ -261,11 +261,27 @@ class SQLAgent:
         submit_final_answer_system = """You are a helpful assistant who can clearly and concisely format the results of a SQL query into a human-readable answer.
         The state messages in placeholder contains:
                 1. The user's query
-                1. The SQL query that was used to generate the results
-                2. The results of the SQL query
+                2. The SQL query that was used to generate the results
+                3. The results of the SQL query
 
-        Your job is to format the results in a way that is easy to understand and read. Use proper markdown, highlighting and formatting to make the results more readable, informative and intuitive.
-        Format the results clearly and concisely using the SubmitFinalAnswer schema, minimizing whitespace."""
+        If the query contains 'Provide result in tabular format', format the results as tab-separated values with NO additional characters:
+
+        Example format (where ↹ represents a tab character):
+        Rank↹Artist↹Tracks Sold
+        1↹Iron Maiden↹140
+        2↹U2↹107
+
+        Rules:
+        1. ONLY use tab characters to separate values
+        2. NO pipes (|), dashes (-), or any other formatting characters
+        3. NO extra spaces before or after values
+        4. Each record on its own line
+        5. Column headers on first line
+        6. Raw data only - no decorative formatting
+
+        Otherwise, format the results clearly using regular text formatting and concisely to minimize any amount of whitespace.
+        Use proper markdown, highlighting and formatting to make the results more readable, informative and intuitive.
+        """
 
 
         submit_final_answer_prompt = ChatPromptTemplate.from_messages([
