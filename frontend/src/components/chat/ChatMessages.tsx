@@ -229,12 +229,12 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled, setVizEnabled, t
       </div>
 
       {/* Main chat content */}
-      <div className="flex-1 overflow-y-auto p-4 pl-[270px] space-y-8 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 pl-[240px] pr-[100px] space-y-8 pb-32">
         {messages.map((message, index) => (
           <div
             key={index}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start pl-8'} 
-              animate-fade-in px-3`}
+            className={`flex ${message.role === 'user' ? 'justify-end pr-12' : 'justify-start'} 
+              animate-fade-in`}
           >
             <div className={`max-w-[90%] rounded-2xl ${
               message.role === 'user' 
