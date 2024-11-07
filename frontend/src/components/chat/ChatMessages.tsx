@@ -12,6 +12,20 @@ interface ChatMessagesProps {
   vizEnabled: boolean;
 }
 
+// Add the function here, before any components
+const extractQueryAndResult = (content: string) => {
+  const queryMatch = content.match(/```sql\n([\s\S]*?)\n```/);
+  const query = queryMatch ? queryMatch[1].trim() : '';
+  const resultMatch = content.split('Result:\n');
+  const result = resultMatch.length > 1 ? resultMatch[1].trim() : '';
+  
+  // For debugging
+  console.log('Content:', content);
+  console.log('Extracted Query:', query);
+  console.log('Extracted Result:', result);
+  
+  return { query, result };
+};
 
 // Add this new component above ChatMessages
 interface VizControlsProps {
@@ -109,64 +123,59 @@ interface CopyButtonProps {
   text: string;
   label: string;
   vizData?: string;
+  tabularMode?: boolean;
 }
 
-const CopyButton = ({ text, label, vizData }: CopyButtonProps) => {
+const formatTabularData = (text: string): string => {
+  // Split into lines and remove empty lines and markdown separators
+  const lines = text.split('\n')
+    .filter(line => line.trim() && !line.includes('---') && !line.includes('Result:'))
+    .map(line => {
+      // Remove leading/trailing pipes and split by remaining pipes
+      const cells = line.replace(/^\||\|$/g, '').split('|');
+      // Clean each cell and ensure consistent spacing
+      return cells.map(cell => cell.trim()).join('\t');
+    });
+  
+  return lines.join('\n');
+};
+
+const CopyButton = ({ text, label, vizData, tabularMode }: CopyButtonProps) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
     try {
-      if (vizData) {
-        // Create HTML content with both text and image
-        const htmlContent = `
-          <div>
-            <pre style="white-space: pre-wrap;">${text}</pre>
-            ${vizData ? `<img src="${vizData}" />` : ''}
-          </div>
-        `;
+      if (label === "Copy All") {
+        const { query, result } = extractQueryAndResult(text);
+        const formattedResult = tabularMode ? formatTabularData(result) : result;
+        const allContent = `SQL Query:\n${query}\n\nResult:\n${formattedResult}`;
+        
+        if (vizData) {
+          const htmlContent = `
+            <div>
+              <pre style="white-space: pre-wrap;">SQL Query:\n${query}\n\nResult:\n${formattedResult}</pre>
+              <img src="${vizData}" style="width: 200px; height: auto;" />
+            </div>
+          `;
 
-        // Create clipboard data
-        const clipboardData = new ClipboardItem({
-          'text/plain': new Blob([text], { type: 'text/plain' }),
-          'text/html': new Blob([htmlContent], { type: 'text/html' }),
-        });
+          const clipboardData = new ClipboardItem({
+            'text/plain': new Blob([allContent], { type: 'text/plain' }),
+            'text/html': new Blob([htmlContent], { type: 'text/html' })
+          });
 
-        // Copy to clipboard
-        await navigator.clipboard.write([clipboardData]);
+          await navigator.clipboard.write([clipboardData]);
+        } else {
+          await navigator.clipboard.writeText(allContent);
+        }
       } else {
-        // If no image, just copy text
-        await navigator.clipboard.writeText(text);
+        const finalText = tabularMode ? formatTabularData(text) : text;
+        await navigator.clipboard.writeText(finalText);
       }
       
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
-      // Fallback method
-      try {
-        const tempElement = document.createElement('div');
-        tempElement.innerHTML = `
-          <pre style="white-space: pre-wrap;">${text}</pre>
-          ${vizData ? `<img src="${vizData}" />` : ''}
-        `;
-        document.body.appendChild(tempElement);
-        
-        const range = document.createRange();
-        range.selectNode(tempElement);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-        
-        document.execCommand('copy');
-        document.body.removeChild(tempElement);
-        
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (fallbackErr) {
-        console.error('Fallback copy failed:', fallbackErr);
-        // Last resort: just copy text
-        navigator.clipboard.writeText(text);
-      }
     }
   };
 
@@ -202,14 +211,6 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
     scrollToBottom();
   }, [messages, isLoading]);
 
-  const extractQueryAndResult = (content: string) => {
-    const queryMatch = content.match(/```sql\n([\s\S]*?)\n```/);
-    const query = queryMatch ? queryMatch[1].trim() : '';
-    const resultMatch = content.split('Result:\n');
-    const result = resultMatch.length > 1 ? resultMatch[1].trim() : '';
-    return { query, result };
-  };
-
   return (
     <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-32">
       {messages.map((message, index) => (
@@ -241,9 +242,10 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                             <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
                           </div>
                           <CopyButton 
-                            text={`Query:\n${query}\n\nResult:\n${result}`} 
-                            label="Copy All" 
+                            text={message.content}
+                            label="Copy All"
                             vizData={message.viz_result}
+                            tabularMode={message.tabularMode}
                           />
                         </div>
                       <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
@@ -254,7 +256,7 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
                         </div>
-                        <CopyButton text={query} label="Copy Query" />
+                        <CopyButton text={query} label="Copy Query" vizData={message.viz_result} tabularMode={message.tabularMode} />
                       </div>
                       <pre className="relative group rounded-lg p-4 overflow-x-auto">
                         <code className="text-sm font-mono relative">
@@ -317,16 +319,45 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                           </span>
                           <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
                         </div>
-                        <CopyButton text={result} label="Copy Result" />
+                        <CopyButton text={result} label="Copy Result" vizData={message.viz_result} tabularMode={message.tabularMode} />
                       </div>
                         <div className="text-gray-600">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             className="prose max-w-none"
                             components={{
-                              p: ({children}) => (
-                                <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{children}</p>
-                              ),
+                              p: ({children}) => {
+                                // Check if content is TSV format
+                                const text = children?.toString() || '';
+                                if (text.includes('\t')) {
+                                  const rows = text.split('\n').map(row => row.split('\t'));
+                                  return (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                      <thead>
+                                        <tr>
+                                          {rows[0].map((header, i) => (
+                                            <th key={i} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                              {header}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody className="bg-white divide-y divide-gray-200">
+                                        {rows.slice(1).map((row, i) => (
+                                          <tr key={i}>
+                                            {row.map((cell, j) => (
+                                              <td key={j} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {cell}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  );
+                                }
+                                return <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{children}</p>;
+                              },
                               strong: ({children}) => (
                                 <span className="font-semibold text-gray-800 bg-gray-200/50 px-1.5 py-0.5 rounded">
                                   {children}

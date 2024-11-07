@@ -8,10 +8,12 @@ import { ChatLayout } from '@/components/chat/ChatLayout';
 import { DisconnectButton } from '@/components/ui/DisconnectButton';
 import { Header } from '@/components/layout/Header';
 import { ToggleSwitch } from '@/components/common/ToggleSwitch';
+import { TabularModeToggle } from '@/components/common/TabularModeToggle';
 import { Message } from '@/types/chat';
 
 export default function DatabaseChat() {
     const [vizEnabled, setVizEnabled] = useState(true);
+    const [tabularMode, setTabularMode] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showInitialText, setShowInitialText] = useState(true);
@@ -57,7 +59,8 @@ export default function DatabaseChat() {
             },
             body: JSON.stringify({ 
               query: message,
-              vizEnabled: vizEnabled 
+              vizEnabled: vizEnabled,
+              tabularMode: tabularMode
             }),
           });
         
@@ -76,7 +79,8 @@ export default function DatabaseChat() {
             role: 'assistant', 
             content: `SQL Query Used:\n\`\`\`sql\n${data.query_used || 'Query not available'}\n\`\`\`\n\nResult:\n${formatTableName(data.query_result)}`,
             viz_result: data.viz_result,
-            vizEnabledState: vizEnabled  // Store current visualization state
+            vizEnabledState: vizEnabled,
+            tabularMode: tabularMode  // Add this to track tabular mode state
           }]);
         } catch (error) {
             console.error('Error querying database:', error);
@@ -105,9 +109,10 @@ export default function DatabaseChat() {
         <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <Logo minimal isTransitioning />
 
-          <div className="fixed top-24 left-6 z-[100] animate-fade-in">
-        <ToggleSwitch enabled={vizEnabled} setEnabled={setVizEnabled} />
-        </div>
+          <div className="fixed top-24 left-6 z-[100] animate-fade-in flex flex-col gap-4">
+            <ToggleSwitch enabled={vizEnabled} setEnabled={setVizEnabled} />
+            <TabularModeToggle enabled={tabularMode} setEnabled={setTabularMode} />
+         </div>
           
           {connectedDBInfo && (
             <div className="fixed top-4 right-4 z-[100]">
