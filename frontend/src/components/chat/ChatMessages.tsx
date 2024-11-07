@@ -346,7 +346,7 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled, setVizEnabled, t
                                 p: ({children}) => {
                                   // Check if content is TSV format
                                   const text = children?.toString() || '';
-                                  if (text.includes('\t')) {
+                                  if (tabularMode && text.includes('\t')) {
                                     const rows = text.split('\n').map(row => row.split('\t'));
                                     return (
                                       <table className="min-w-full divide-y divide-gray-200">

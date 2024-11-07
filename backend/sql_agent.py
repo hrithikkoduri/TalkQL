@@ -27,6 +27,9 @@ class State(TypedDict):
 class DBQuery(BaseModel):
     query: str = Field(..., description="The SQL query to execute")
 
+
+class OptimizedQuery(BaseModel):
+    query: str = Field(..., description="The optimized SQL query to execute")
     
 
 # Describe a tool to represent the end state
@@ -156,11 +159,6 @@ class SQLAgent:
         messages = state["messages"]
         print(f"Messages in get all tables: {messages}")
         print("--------------------------------Getting all tables--------------------------------")
-        all_tables_prompt = ChatPromptTemplate.from_messages([
-            ("system", "List all the tables in the database"),
-            ("placeholder", "{messages}")
-        ])
-        all_tables_llm = self.llm.with_structured_output(Tables)
         all_tables = self.list_tables_tool.invoke("")
         print(all_tables)
         print("--------------------------------All tables retrieved--------------------------------")
@@ -205,7 +203,6 @@ class SQLAgent:
             - Includes appropriate WHERE clauses for filtering
             - If the user's question is about a specific time period, include a date filter in the query
             - If the user's question is about a specific value, include a filter for that value in the query
-            - If user doesn't specify number of results, restrict the number of results to top10, and indicate there are more results
             - Uses proper aggregation functions when needed
             
             Remember to:
@@ -221,11 +218,49 @@ class SQLAgent:
             ("system", generate_query_system),
             ("placeholder", "{messages}")
         ])
+        formatted_generate_query_prompt = generate_query_prompt.invoke({"messages":messages})  # Format the prompt
         generate_query_llm = self.llm.with_structured_output(DBQuery)
-        generate_query_result = generate_query_llm.invoke(messages)
-        print(generate_query_result)
+        generate_query_result = generate_query_llm.invoke(formatted_generate_query_prompt)
+        print("--------------------------------")
+        print(generate_query_result.query)
         print("--------------------------------Query generated--------------------------------")
         return {"messages": state["messages"] + [AIMessage(content = f"{generate_query_result.query}")]}
+
+    def correct_and_optimize_query(self, state: State):
+        """
+        Correct and optimize the query
+        """
+        messages = state["messages"]
+        print(f"Messages in correct and optimize query: {messages}")
+        print("--------------------------------Correcting and optimizing query--------------------------------")
+        sql_query = messages[-1].content
+        correct_and_optimize_query_system = """
+        You are a SQL expert who corrects and optimizes SQL queries. 
+        Your job is to find any issues with the query and correct them.
+        You will also need to optimize the query for better performance. Try to make the query more efficient by reducing the number of joins, using appropriate indexes, and minimizing data retrieval. But make sure the results of the optimized query are still the same as the original query.
+        If the user's question doesn't specify the number of results, restrict the number of results to top 10 using LIMIT 10 and mention that only top 10 results are shown in the comment.
+        
+        You will be provided with the state messages in placeholder which contains:
+        1. The user's question
+        2. All the tables in the database
+        3. The complete schema information for those tables
+        4. The SQL query that was generated
+
+        Return only the SQL query with the comment, nothing else.
+        """
+
+        correct_and_optimize_query_prompt = ChatPromptTemplate.from_messages([
+            ("system", correct_and_optimize_query_system),
+            ("placeholder", "{messages}")
+        ])
+        formatted_correct_and_optimize_query_prompt = correct_and_optimize_query_prompt.invoke({"messages":messages})  # Format the prompt
+        correct_and_optimize_query_llm = self.llm.with_structured_output(OptimizedQuery)
+        correct_and_optimize_query_result = correct_and_optimize_query_llm.invoke(formatted_correct_and_optimize_query_prompt)
+        print("--------------------------------Correct and optimize query result--------------------------------")
+        print(correct_and_optimize_query_result.query)
+        print("--------------------------------Query corrected and optimized--------------------------------")
+        return {"messages": state["messages"] + [AIMessage(content = f"{correct_and_optimize_query_result.query}")]}
+    
     
     
     def execute_query(self, state: State):
@@ -263,22 +298,9 @@ class SQLAgent:
                 1. The user's query
                 2. The SQL query that was used to generate the results
                 3. The results of the SQL query
-
-        If the query contains 'Provide result in tabular format', format the results as tab-separated values with NO additional characters:
-
-        Example format (where ↹ represents a tab character):
-        Rank↹Artist↹Tracks Sold
-        1↹Iron Maiden↹140
-        2↹U2↹107
-
-        Rules:
-        1. ONLY use tab characters to separate values
-        2. NO pipes (|), dashes (-), or any other formatting characters
-        3. NO extra spaces before or after values
-        4. Each record on its own line
-        5. Column headers on first line
-        6. Raw data only - no decorative formatting
-
+                4. Additional comment regarding the query results
+        
+        Only if the query contains 'Provide result in tabular format', format the results in tabular format.
         Otherwise, format the results clearly using regular text formatting and concisely to minimize any amount of whitespace.
         Use proper markdown, highlighting and formatting to make the results more readable, informative and intuitive.
         """
@@ -288,9 +310,11 @@ class SQLAgent:
             ("system", submit_final_answer_system),
             ("placeholder", "{messages}")
         ])
+        messages = state["messages"]    
+        formatted_submit_final_answer_prompt = submit_final_answer_prompt.invoke({"messages":messages})  # Format the prompt
         submit_final_answer_llm = self.llm.with_structured_output(SubmitFinalAnswer)
-        submit_final_answer_result = submit_final_answer_llm.invoke(state["messages"])
-        print(submit_final_answer_result)
+        submit_final_answer_result = submit_final_answer_llm.invoke(formatted_submit_final_answer_prompt)
+        print(submit_final_answer_result.final_answer)
         print("--------------------------------Final answer submitted--------------------------------")
         return {"messages": state["messages"] + [AIMessage(content = f"{submit_final_answer_result.final_answer}")]}
     
@@ -303,13 +327,15 @@ class SQLAgent:
         workflow.add_node("get_all_tables", self.get_all_tables)
         workflow.add_node("get_schema_for_all_tables", self.get_schema_for_all_tables)
         workflow.add_node("generate_query", self.generate_query)
+        workflow.add_node("correct_and_optimize_query", self.correct_and_optimize_query)
         workflow.add_node("execute_query", self.execute_query)
         workflow.add_node("submit_final_answer", self.submit_final_answer)
 
         workflow.add_edge(START, "get_all_tables")
         workflow.add_edge("get_all_tables", "get_schema_for_all_tables")
         workflow.add_edge("get_schema_for_all_tables", "generate_query")
-        workflow.add_edge("generate_query", "execute_query")
+        workflow.add_edge("generate_query", "correct_and_optimize_query")
+        workflow.add_edge("correct_and_optimize_query", "execute_query")
         workflow.add_edge("execute_query", "submit_final_answer")
         workflow.add_edge("submit_final_answer", END)
         app = workflow.compile()
