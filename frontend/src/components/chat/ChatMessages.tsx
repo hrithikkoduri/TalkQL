@@ -356,7 +356,7 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                               </div>
                               <div 
                                 className="overflow-hidden rounded-lg border border-gray-100 cursor-pointer
-                                  hover:border-blue-200/50 transition-all duration-300"
+                                  hover:border-blue-200/50 transition-all duration-300 relative group"
                                 onClick={() => {
                                   if (message.viz_result) {
                                     setSelectedViz(message.viz_result);
@@ -369,7 +369,15 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                                   className="w-full max-w-2xl mx-auto hover:scale-102 transition-transform duration-300"
                                   style={{ maxHeight: '400px', objectFit: 'contain' }}
                                 />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 flex items-center justify-center">
+                                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-600 text-sm bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                                    Click to expand visualization
+                                  </span>
+                                </div>
                               </div>
+                              <p className="text-sm text-gray-400 mt-2 text-center">
+                                Click anywhere on the visualization to view in full screen
+                              </p>
                             </div>
                           )}
                         </div>

@@ -26,7 +26,7 @@ class VisualizationCode(BaseModel):
 
 class VisualizationAgent:
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4", temperature=0)
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         self.python_repl = PythonREPL()
     
     def create_python_code(self, state: State):
@@ -52,12 +52,22 @@ class VisualizationAgent:
         - Margins: plt.margins(x=0.02, y=0.1)
         - DPI: plt.gcf().set_dpi(120)
         - Padding: plt.tight_layout(rect=[0.02, 0.03, 0.98, 0.95])
+        - Add extra padding between plot elements using plt.subplots_adjust()
+        - Ensure adequate spacing between axis ticks and labels
 
         3. Typography Hierarchy:
         - Title: 14pt, weight='semibold', color='#1F2937'
         - Axis labels: 11pt, weight='medium', color='#4B5563'
         - Tick labels: 10pt, color='#6B7280'
         - Legend: 10pt, frameon=False, loc='upper right'
+        - Rotate labels at ticks 45 degrees Use plt.xticks(rotation=45, ha='right')
+        - Text on the graph should be placed on the right side of the graph, without overlapping with the graph elements
+        - For x-axis labels:
+            * Increase spacing between ticks if needed
+            * Consider wrapping long labels using textwrap
+        - For y-axis labels:
+            * Ensure adequate left margin for long labels
+            * Use scientific notation or abbreviate large numbers
 
         4. Bar Charts:
         - Bar alpha: 0.9
@@ -65,27 +75,31 @@ class VisualizationAgent:
         - Bar width: 0.7
         - Add subtle gradient using ax.patches
         - Horizontal preferred for better label readability
+        - Space bars appropriately using width parameter
 
         5. Line Charts:
         - Line width: 2.5
         - Marker size: 6
         - Add subtle gradient fill below lines
         - Use rounded line joins
+        - Space out data points to prevent overcrowding
 
         6. Polish:
         - Remove top and right spines
         - Grid: color='#E2E8F0', alpha=0.2, linestyle='--'
-        - Add subtle padding around elements
+        - Add generous padding around all elements
         - Use thousands separator for large numbers
         - Sort data in meaningful order (usually descending)
-        - Add value labels on bars for better readability
+        - Add value labels on bars with sufficient spacing
 
-        Remember:
-        - Keep visualizations simple and focused
-        - Use consistent spacing and alignment
-        - Ensure text never overlaps with data
-        - Add subtle animations or gradients where appropriate
-        - Format numbers for better readability (e.g., '1.5M' instead of '1500000')"""
+        Very Important, Please Remember:
+        - ALWAYS check for potential label overlaps and adjust spacing accordingly
+        - Use plt.tight_layout() with appropriate parameters to prevent overlapping
+        - For dense data, consider showing fewer ticks or aggregating data
+        - Maintain clear spacing between all visualization elements
+        - Format numbers for better readability (e.g., '1.5M' instead of '1500000')
+        - When in doubt, add more space between elements"""
+
         create_python_code_prompt = ChatPromptTemplate.from_messages([
             ("system", create_python_code_system),
             (MessagesPlaceholder(variable_name="messages"))
