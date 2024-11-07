@@ -3,3 +3,6 @@ venv/
 *.db
 __pycache__/
 test.ipynb
+.DS_Store
+test2.ipynb
+customers-1000.csv

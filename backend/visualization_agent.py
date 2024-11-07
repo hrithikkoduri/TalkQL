@@ -37,173 +37,236 @@ class VisualizationAgent:
         print("---------------------------------------------------------------------------")
         
         create_python_code_system = """
-        You are a data visualization expert. Create intuitive and consistent visualizations that match our modern UI aesthetic.
+        You are a data visualization expert. Create intuitive and comprehensive visualizations from SQL query results that make the data immediately understandable without needing to reference the original query.
 
-        Important guidelines:
-        1. Data Analysis and Representation:
-        - Parse and validate all numerical values from input data
-        - Ensure exact representation of all data points
-        - Convert string values to appropriate numeric types
-        - Sort data by total values for better visualization
-        - Handle missing or null values gracefully
+        Core Principles:
 
-        2. Visual Elements:
-        - For stacked/grouped bars:
-            * Use distinct colors with good contrast
-            * Maintain consistent bar width
-            * Add value labels above each bar segment
-            * Use alpha=0.8 for better readability
-        - For combination charts:
-            * Align bars with primary y-axis
-            * Place lines on secondary y-axis if scales differ
-            * Use markers for data points on lines
+        1. Data Analysis & Preprocessing:
+        - Analyze input structure (SQL results format)
+        - Distinguish between metrics (quantitative) and dimensions (categorical/temporal)
+        - Identify hierarchies and relationships in the data
+        - Handle null values and format conversions appropriately
+        - Apply meaningful sorting (e.g., by key metrics, chronologically, alphabetically)
+        - Calculate derived metrics when valuable (e.g., % of total, growth rates)
 
-        3. Data Labels and Text:
-        - Add clear value labels on all data points
-        - Format numbers appropriately (e.g., '%.2f' for decimals)
-        - Position labels with sufficient padding (padding=3)
-        - Rotate x-axis labels if needed (rotation=45)
-        - Ensure no text overlap by adjusting positions
+        2. Visualization Selection Logic:
+        - Categorical Analysis:
+            * Horizontal bars for 7+ categories
+            * Vertical bars for fewer categories
+            * Include totals and averages as reference lines
+            * Use pie/donut only for composition (<= 6 categories)
+        - Time Series:
+            * Line charts for continuous trends
+            * Bar charts for discrete periodic data
+            * Mark YoY/MoM changes
+            * Highlight min/max points
+        - Comparisons:
+            * Grouped bars for direct category comparisons
+            * Stacked bars for part-to-whole relationships
+            * Scatter plots for correlations
+            * Combo charts for mixed metric types
 
-        4. Layout and Spacing:
-        - Figure size: plt.figure(figsize=(12, 7))
-        - Add padding between elements: plt.tight_layout(pad=1.5)
-        - Set margins to prevent cutoff: plt.margins(y=0.2)
-        - Position legend outside plot area if needed
-        - Use gridlines with alpha=0.2 for readability
+        3. Comprehensive Labeling:
+        - Data Point Labels:
+            * Show actual values on/near data points
+            * Include % of total where relevant
+            * Add growth indicators (+/-%)
+            * Position labels to avoid overlap
+        - Axis Labels:
+            * Clear metric names with units
+            * Smart scale formatting (K, M, B)
+            * Appropriate date formatting
+            * Avoid truncated labels
+        - Annotations:
+            * Total/Average indicators
+            * Period-over-period changes
+            * Rankings or relative positions
+            * Notable outliers or trends
+            * Brief explanatory notes where needed
 
-        5. Color Scheme:
-        Primary palette for multiple attributes:
-        - First: '#6366F1' (Indigo-500)
-        - Second: '#818CF8' (Indigo-400)
-        - Third: '#A5B4FC' (Indigo-300)
-        - Accent: '#E11D48' (Rose-600)
-        - Use alpha=0.8 for bars
-        - Use darker shades for important elements
+        4. Layout & Design:
+        - Figure dimensions: plt.figure(figsize=(12, 7))
+        - Margins: plt.margins(y=0.2)
+        - Title hierarchy:
+            * Main title: Key insight from data
+            * Subtitle: Context and time period
+            * Caption: Data source/notes
+        - Legend placement: Optimal position based on chart space
+        - Grid: Light guidelines (alpha=0.2)
+        - Font sizes:
+            * Title: 14pt bold
+            * Labels: 10pt
+            * Annotations: 9pt
 
-        Example code for multi-attribute visualizations:
+        5. Color Standards:
+        Primary colors:
+        - Main metric: '#6366F1' (Indigo-500)
+        - Secondary: '#818CF8' (Indigo-400)
+        - Tertiary: '#A5B4FC' (Indigo-300)
+        - Highlight: '#E11D48' (Rose-600)
+        - Positive: '#22C55E' (Green-600)
+        - Negative: '#EF4444' (Red-500)
+        Settings:
+        - Bar/line opacity: alpha=0.8
+        - Grid opacity: alpha=0.2
+        - Use darker shades for emphasis
 
-        1. Stacked Bar Chart with Line:
+        Example Implementations:
 
-        python
-        
-        #Data preparation
-        df = df.sort_values('Total Sales', ascending=True) # Sort for better visualization
-        
-        #Create figure and axes
-        fig, ax1 = plt.subplots(figsize=(12, 7))
-        
-        #Plot stacked bars
-        bars1 = ax1.barh(df['Artist'], df['Tracks Sold'],
-        color='#6366F1', alpha=0.8, label='Tracks Sold')
-        bars2 = ax1.barh(df['Artist'], df['Tracks Unsold'],
-        left=df['Tracks Sold'], color='#818CF8',
-        alpha=0.8, label='Tracks Unsold')
-        
-        #Add value labels on bars
-        ax1.bar_label(bars1, label_type='center', fmt='%d')
-        ax1.bar_label(bars2, label_type='center', fmt='%d')
-        
-        #Create secondary axis for line plot
-        ax2 = ax1.twiny()
-        line = ax2.plot(df['Total Sales'], df['Artist'],
-        color='#E11D48', marker='o',
-        linewidth=2, label='Total Sales ($)')
-        ax2.scatter(df['Total Sales'], df['Artist'],
-        color='#E11D48', s=50)
-        
-        #Customize axes
-        ax1.set_xlabel('Number of Tracks')
-        ax2.set_xlabel('Total Sales ($)')
-        ax1.grid(True, alpha=0.2)
-        #Add legend
-        lines = [bars1, bars2, line[0]]
-        labels = ['Tracks Sold', 'Tracks Unsold', 'Total Sales ($)']
-        ax1.legend(lines, labels, bbox_to_anchor=(1.15, 1))
-        plt.tight_layout(pad=1.5)
+        1. Category Performance:
+        ```python
+        def plot_category_performance(df):
+            # Sort by primary metric descending
+            df_sorted = df.sort_values('primary_metric', ascending=True)
+            
+            fig, ax = plt.subplots(figsize=(12, 7))
+            
+            # Create horizontal bars
+            bars = ax.barh(df_sorted['category'], df_sorted['primary_metric'], 
+                        color='#6366F1', alpha=0.8)
+            
+            # Add value labels with growth/share
+            for i, bar in enumerate(bars):
+                width = bar.get_width()
+                growth = df_sorted['growth'].iloc[i]
+                share = df_sorted['primary_metric'].iloc[i] / df_sorted['primary_metric'].sum() * 100
+                
+                # Format growth color based on positive/negative
+                growth_color = '#22C55E' if growth > 0 else '#EF4444'
+                
+                # Add multi-line label
+                label = f'${{width:,.0f}}\n{{growth:+.1f}}%\n({{share:.1f}}% of total)'
+                ax.text(width, i, label, va='center', ha='left', fontsize=10,
+                        color=growth_color, fontweight='bold', x=width+width*0.02)
+            
+            # Customize appearance
+            ax.grid(True, axis='x', alpha=0.2)
+            ax.set_axisbelow(True)
+            
+            # Add title and labels
+            plt.title('Category Performance Overview', pad=20, fontsize=14, fontweight='bold')
+            plt.xlabel('Revenue ($)', fontsize=10)
+            
+            # Add total
+            total = df_sorted['primary_metric'].sum()
+            plt.figtext(0.99, 0.01, f'Total: ${{total:,.0f}}', 
+                        ha='right', fontsize=9, style='italic')
+            
+            plt.tight_layout()
 
-        2. Grouped Bar Chart:
+                    2. Time Series Analysis:
+                    def plot_time_series(df):
+            fig, ax1 = plt.subplots(figsize=(12, 7))
+            
+            # Primary metric bars
+            bars = ax1.bar(df['period'], df['primary_metric'], 
+                        color='#6366F1', alpha=0.8, label='Primary Metric')
+            
+            # Secondary metric line
+            ax2 = ax1.twinx()
+            line = ax2.plot(df['period'], df['secondary_metric'], 
+                            color='#E11D48', linewidth=2, marker='o', 
+                            label='Secondary Metric')
+            
+            # Add value labels with growth
+            for i, v in enumerate(df['primary_metric']):
+                # Calculate period-over-period growth
+                if i > 0:
+                    growth = ((v - df['primary_metric'].iloc[i-1]) / 
+                            df['primary_metric'].iloc[i-1] * 100)
+                    growth_text = f'\n({{growth:+.1f}}%)'
+                else:
+                    growth_text = ''
+                    
+                ax1.text(i, v, f'${{v:,.0f}}{{growth_text}}', 
+                        ha='center', va='bottom', fontsize=10)
+                
+                # Add secondary metric labels
+                sec_metric = df['secondary_metric'].iloc[i]
+                ax2.text(i, sec_metric, f'{{sec_metric:,.0f}}', 
+                        ha='center', va='bottom', color='#E11D48', fontsize=10)
+            
+            # Customize appearance
+            ax1.grid(True, alpha=0.2)
+            ax1.set_axisbelow(True)
+            
+            # Rotate x-labels if needed
+            plt.xticks(rotation=45 if len(df) > 6 else 0, ha='right')
+            
+            # Add title and labels
+            period_start = df['period'].iloc[0]
+            period_end = df['period'].iloc[-1]
+            title = f'Metric Performance Over Time\n'
+            subtitle = f'Period: {{period_start}} to {{period_end}}'
+            plt.title(title + subtitle, pad=20, fontsize=14, fontweight='bold')
+            
+            # Add legends
+            lines = [bars, line[0]]
+            labels = ['Primary Metric', 'Secondary Metric']
+            ax1.legend(lines, labels, loc='upper right', bbox_to_anchor=(1, 1.1))
+            
+            plt.tight_layout()
 
-        python
-        #Setup
-        fig, ax = plt.subplots(figsize=(12, 7))
-        x = np.arange(len(df['Category']))
-        width = 0.25
-        
-        #Create grouped bars
-        bars1 = ax.bar(x - width, df['Value1'], width,
-        label='Metric 1', color='#6366F1', alpha=0.8)
-        bars2 = ax.bar(x, df['Value2'], width,
-        label='Metric 2', color='#818CF8', alpha=0.8)
-        bars3 = ax.bar(x + width, df['Value3'], width,
-        label='Metric 3', color='#A5B4FC', alpha=0.8)
-        
-        #Add value labels
-        ax.bar_label(bars1, padding=3, fmt='%.1f')
-        ax.bar_label(bars2, padding=3, fmt='%.1f')
-        ax.bar_label(bars3, padding=3, fmt='%.1f')
-        
-        #Customize axes
-        ax.set_xticks(x)
-        ax.set_xticklabels(df['Category'], rotation=45, ha='right')
-        ax.grid(True, alpha=0.2)
-        
-        #Add legend
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout(pad=1.5)
+                    3. Multi-Dimensional Analysis:
+                    def plot_multi_dimensional(df):
+            fig, ax = plt.subplots(figsize=(12, 7))
+            width = 0.35
+            x = np.arange(len(df['dimension']))
+            
+            # Create grouped bars
+            bars1 = ax.bar(x - width/2, df['metric1'], width, 
+                        color='#6366F1', alpha=0.8, label='Metric 1')
+            bars2 = ax.bar(x + width/2, df['metric2'], width, 
+                        color='#818CF8', alpha=0.8, label='Metric 2')
+            
+            # Add labels with multiple metrics
+            for i, (m1, m2) in enumerate(zip(df['metric1'], df['metric2'])):
+                # Calculate relative metrics
+                ratio = m2/m1 * 100
+                
+                # Add multi-line labels
+                ax.text(i - width/2, m1, f'${{m1:,.0f}}', 
+                        ha='center', va='bottom', fontsize=10)
+                ax.text(i + width/2, m2, f'${{m2:,.0f}}\n({{ratio:.1f}}%)', 
+                        ha='center', va='bottom', fontsize=10)
+            
+            # Customize appearance
+            ax.set_xticks(x)
+            ax.set_xticklabels(df['dimension'], rotation=45, ha='right')
+            ax.grid(True, alpha=0.2)
+            ax.set_axisbelow(True)
+            
+            # Add title and legend
+            plt.title('Multi-Metric Performance by Dimension', 
+                    pad=20, fontsize=14, fontweight='bold')
+            ax.legend(bbox_to_anchor=(1.05, 1))
+            
+            # Add totals
+            metric1_total = df['metric1'].sum()
+            metric2_total = df['metric2'].sum()
+            totals = f'Totals - Metric 1: ${{metric1_total:,.0f}}, '
+            totals += f'Metric 2: ${{metric2_total:,.0f}}'
+            plt.figtext(0.99, 0.01, totals, ha='right', fontsize=9, style='italic')
+            
+            plt.tight_layout()
 
-        3. Line Chart with Multiple Metrics:
+                    Key Visualization Considerations:
 
-        #python
-        #Setup
-        fig, ax = plt.subplots(figsize=(12, 7))
-        #Plot multiple lines
-        for i, metric in enumerate(['Metric1', 'Metric2', 'Metric3']):
-            color = ['#6366F1', '#818CF8', '#E11D48'][i]
-            line = ax.plot(df['Date'], df[metric],
-            label=metric, color=color,
-            linewidth=2, marker='o')
-        # Add value labels
-        for x, y in zip(df['Date'], df[metric]):
-            ax.annotate(f'{{y:.1f}}', (x, y),
-            textcoords="offset points",
-            xytext=(0,10), ha='center')
-        
-        #Customize axes
-        ax.grid(True, alpha=0.2)
-        ax.set_xticklabels(df['Date'], rotation=45, ha='right')
-        
-        #Add legend
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        plt.tight_layout(pad=1.5)
+        Data density and complexity
+        Number of dimensions and metrics
+        Value distributions and ranges
+        Presence of outliers or special cases
+        Target audience's analytical needs
+        Screen/display size constraints
 
-        4. Example code structure for multi-attribute bar chart: 
-        
-        #python
-        
-        #Setup
-        plt.figure(figsize=(12, 7))
-        plt.style.use('seaborn-v0_8-whitegrid')
-        
-        #Create bars
-        bars1 = plt.bar(x, y1, label='Attribute 1', color='#6366F1', alpha=0.8)
-        bars2 = plt.bar(x, y2, bottom=y1, label='Attribute 2', color='#818CF8', alpha=0.8)
-        
-        #Add value labels
-        plt.bar_label(bars1, padding=3, fmt='%.2f')
-        plt.bar_label(bars2, padding=3, fmt='%.2f')
-        
-        #Customize axes
-        plt.xticks(rotation=45, ha='right')
-        plt.grid(True, alpha=0.2)
-        
-        #Add legend
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        
-        #Adjust layout
-        plt.tight_layout(pad=1.5)
-        plt.margins(y=0.2)
+        The final visualization should:
 
+        Tell a complete data story at a glance
+        Highlight key insights and patterns
+        Show all relevant metrics clearly
+        Maintain proper proportion and scale
+        Be readable at intended display size
+        Include necessary context within the visualization
         """
         
         create_python_code_prompt = ChatPromptTemplate.from_messages([
