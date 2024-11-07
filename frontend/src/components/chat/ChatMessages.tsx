@@ -5,11 +5,16 @@ import remarkGfm from 'remark-gfm';
 import { ClipboardIcon, ClipboardDocumentCheckIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { VizModal } from './VizModal';
 import { Message } from '@/types/chat';
+import { ResponseModes } from '../common/ResponseModes';
+
 
 interface ChatMessagesProps {
   messages: Message[];
   isLoading: boolean;
   vizEnabled: boolean;
+  setVizEnabled: (enabled: boolean) => void;
+  tabularMode: boolean;
+  setTabularMode: (enabled: boolean) => void;
 }
 
 // Add the function here, before any components
@@ -199,7 +204,7 @@ const CopyButton = ({ text, label, vizData, tabularMode }: CopyButtonProps) => {
   );
 };
 
-export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesProps) => {
+export const ChatMessages = ({ messages, isLoading, vizEnabled, setVizEnabled, tabularMode, setTabularMode }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedViz, setSelectedViz] = useState<string | null>(null);
 
@@ -212,28 +217,118 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-8 pb-32">
-      {messages.map((message, index) => (
-        <div
-          key={index}
-          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start pl-8'} 
-            animate-fade-in px-3`}
-        >
-          <div className={`max-w-[90%] rounded-2xl ${
-            message.role === 'user' 
-              ? 'bg-gradient-to-r from-blue-600 to-purple-600 p-5 shadow-xl hover:shadow-2xl transition-all duration-200' 
-              : 'bg-white/90 backdrop-blur-lg border border-gray-100/50 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-200'
-          }`}>
-          
-            {message.role === 'assistant' ? (
-              <div>
-                <div className="h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-                <div className="h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
-                <div className="p-4 pb-10">
-                  {(() => {
-                    const { query, result } = extractQueryAndResult(message.content);
-                    return (
-                      <div className="space-y-6 max-w-[90%] mx-auto">
+    <div className="flex">
+      {/* Left side panel */}
+      <div className="w-[320px] min-h-screen fixed left-0 top-0 p-4 pt-24">
+        <ResponseModes
+          tabularEnabled={tabularMode}
+          setTabularEnabled={setTabularMode}
+          vizEnabled={vizEnabled}
+          setVizEnabled={setVizEnabled}
+        />
+      </div>
+
+      {/* Main chat content */}
+      <div className="flex-1 overflow-y-auto p-4 pl-[270px] space-y-8 pb-32">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start pl-8'} 
+              animate-fade-in px-3`}
+          >
+            <div className={`max-w-[90%] rounded-2xl ${
+              message.role === 'user' 
+                ? 'bg-gradient-to-r from-blue-600 to-purple-600 p-5 shadow-xl hover:shadow-2xl transition-all duration-200' 
+                : 'bg-white/90 backdrop-blur-lg border border-gray-100/50 overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-200'
+            }`}>
+            
+              {message.role === 'assistant' ? (
+                <div>
+                  <div className="h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+                  <div className="h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
+                  <div className="p-4 pb-10">
+                    {(() => {
+                      const { query, result } = extractQueryAndResult(message.content);
+                      return (
+                        <div className="space-y-6 max-w-[90%] mx-auto">
+                          <div className="flex justify-between items-center mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                Result
+                              </span>
+                              <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
+                            </div>
+                            <CopyButton 
+                              text={message.content}
+                              label="Copy All"
+                              vizData={message.viz_result}
+                              tabularMode={message.tabularMode}
+                            />
+                          </div>
+                        <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                              SQL Query Used
+                            </span>
+                            <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
+                          </div>
+                          <CopyButton text={query} label="Copy Query" vizData={message.viz_result} tabularMode={message.tabularMode} />
+                        </div>
+                        <pre className="relative group rounded-lg p-4 overflow-x-auto">
+                          <code className="text-sm font-mono relative">
+                            {query.split(' ').map((word, i) => {
+                              // SQL Keywords
+                              if (/^(SELECT|FROM|WHERE|AND|OR|JOIN|LEFT|RIGHT|INNER|GROUP|BY|ORDER|LIMIT|INSERT|UPDATE|DELETE|SET|HAVING|UNION|ALL|AS|ON|IN|BETWEEN|LIKE|IS|NULL|NOT|DESC|ASC)$/i.test(word)) {
+                                return (
+                                  <span key={i} className="text-indigo-500 font-semibold">
+                                    {word}{' '}
+                                  </span>
+                                );
+                              }
+                              // Numbers
+                              else if (/^\d+$/.test(word)) {
+                                return (
+                                  <span key={i} className="text-rose-500 font-medium">
+                                    {word}{' '}
+                                  </span>
+                                );
+                              }
+                              // String literals
+                              else if (/^'.*'$/.test(word)) {
+                                return (
+                                  <span key={i} className="text-teal-500 font-medium">
+                                    {word}{' '}
+                                  </span>
+                                );
+                              }
+                              // Special characters and operators
+                              else if (/^[;,=<>!]+$/.test(word)) {
+                                return (
+                                  <span key={i} className="text-violet-500 font-medium">
+                                    {word}{' '}
+                                  </span>
+                                );
+                              }
+                              // Table names and other identifiers
+                              else if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(word)) {
+                                return (
+                                  <span key={i} className="text-blue-500/90 font-medium">
+                                    {word}{' '}
+                                  </span>
+                                );
+                              }
+                              // Default
+                              return (
+                                <span key={i} className="text-gray-600">
+                                  {word}{' '}
+                                </span>
+                              );
+                            })}
+                          </code>
+                        </pre>
+                        </div>
+                        <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
                         <div className="flex justify-between items-center mb-3">
                           <div className="flex items-center gap-2">
                             <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -241,214 +336,137 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled }: ChatMessagesPr
                             </span>
                             <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
                           </div>
-                          <CopyButton 
-                            text={message.content}
-                            label="Copy All"
-                            vizData={message.viz_result}
-                            tabularMode={message.tabularMode}
-                          />
+                          <CopyButton text={result} label="Copy Result" vizData={message.viz_result} tabularMode={message.tabularMode} />
                         </div>
-                      <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            SQL Query Used
-                          </span>
-                          <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
-                        </div>
-                        <CopyButton text={query} label="Copy Query" vizData={message.viz_result} tabularMode={message.tabularMode} />
-                      </div>
-                      <pre className="relative group rounded-lg p-4 overflow-x-auto">
-                        <code className="text-sm font-mono relative">
-                          {query.split(' ').map((word, i) => {
-                            // SQL Keywords
-                            if (/^(SELECT|FROM|WHERE|AND|OR|JOIN|LEFT|RIGHT|INNER|GROUP|BY|ORDER|LIMIT|INSERT|UPDATE|DELETE|SET|HAVING|UNION|ALL|AS|ON|IN|BETWEEN|LIKE|IS|NULL|NOT|DESC|ASC)$/i.test(word)) {
-                              return (
-                                <span key={i} className="text-indigo-500 font-semibold">
-                                  {word}{' '}
-                                </span>
-                              );
-                            }
-                            // Numbers
-                            else if (/^\d+$/.test(word)) {
-                              return (
-                                <span key={i} className="text-rose-500 font-medium">
-                                  {word}{' '}
-                                </span>
-                              );
-                            }
-                            // String literals
-                            else if (/^'.*'$/.test(word)) {
-                              return (
-                                <span key={i} className="text-teal-500 font-medium">
-                                  {word}{' '}
-                                </span>
-                              );
-                            }
-                            // Special characters and operators
-                            else if (/^[;,=<>!]+$/.test(word)) {
-                              return (
-                                <span key={i} className="text-violet-500 font-medium">
-                                  {word}{' '}
-                                </span>
-                              );
-                            }
-                            // Table names and other identifiers
-                            else if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(word)) {
-                              return (
-                                <span key={i} className="text-blue-500/90 font-medium">
-                                  {word}{' '}
-                                </span>
-                              );
-                            }
-                            // Default
-                            return (
-                              <span key={i} className="text-gray-600">
-                                {word}{' '}
-                              </span>
-                            );
-                          })}
-                        </code>
-                      </pre>
-                      </div>
-                      <div className="bg-gray-100/80 rounded-xl p-4 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200">
-                      <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            Result
-                          </span>
-                          <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
-                        </div>
-                        <CopyButton text={result} label="Copy Result" vizData={message.viz_result} tabularMode={message.tabularMode} />
-                      </div>
-                        <div className="text-gray-600">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            className="prose max-w-none"
-                            components={{
-                              p: ({children}) => {
-                                // Check if content is TSV format
-                                const text = children?.toString() || '';
-                                if (text.includes('\t')) {
-                                  const rows = text.split('\n').map(row => row.split('\t'));
-                                  return (
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                      <thead>
-                                        <tr>
-                                          {rows[0].map((header, i) => (
-                                            <th key={i} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                              {header}
-                                            </th>
-                                          ))}
-                                        </tr>
-                                      </thead>
-                                      <tbody className="bg-white divide-y divide-gray-200">
-                                        {rows.slice(1).map((row, i) => (
-                                          <tr key={i}>
-                                            {row.map((cell, j) => (
-                                              <td key={j} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {cell}
-                                              </td>
+                          <div className="text-gray-600">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              className="prose max-w-none"
+                              components={{
+                                p: ({children}) => {
+                                  // Check if content is TSV format
+                                  const text = children?.toString() || '';
+                                  if (text.includes('\t')) {
+                                    const rows = text.split('\n').map(row => row.split('\t'));
+                                    return (
+                                      <table className="min-w-full divide-y divide-gray-200">
+                                        <thead>
+                                          <tr>
+                                            {rows[0].map((header, i) => (
+                                              <th key={i} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                {header}
+                                              </th>
                                             ))}
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  );
-                                }
-                                return <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{children}</p>;
-                              },
-                              strong: ({children}) => (
-                                <span className="font-semibold text-gray-800 bg-gray-200/50 px-1.5 py-0.5 rounded">
-                                  {children}
-                                </span>
-                              ),
-                              li: ({children}) => (
-                                <li className="text-gray-600 my-1">{children}</li>
-                              ),
-                              ul: ({children}) => (
-                                <ul className="list-disc pl-4 my-2">{children}</ul>
-                              )
-                            }}
-                          >
-                            {result}
-                          </ReactMarkdown>
-                          {/* Add visualization display */}
-                          {message.viz_result && message.vizEnabledState && (
-                              <div className="mt-6 bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
-                              <div className="flex justify-between items-center mb-4">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                                    Visualization
-                                  </span>
-                                  <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
-                                </div>
-                                <VizControls vizData={message.viz_result} />
-                              </div>
-                              <div 
-                                className="overflow-hidden rounded-lg border border-gray-100 cursor-pointer
-                                  hover:border-blue-200/50 transition-all duration-300 relative group"
-                                onClick={() => {
-                                  if (message.viz_result) {
-                                    setSelectedViz(message.viz_result);
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                          {rows.slice(1).map((row, i) => (
+                                            <tr key={i}>
+                                              {row.map((cell, j) => (
+                                                <td key={j} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                  {cell}
+                                                </td>
+                                              ))}
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    );
                                   }
-                                }}
-                              >
-                                <img 
-                                  src={message.viz_result} 
-                                  alt="Data Visualization" 
-                                  className="w-full max-w-2xl mx-auto hover:scale-102 transition-transform duration-300"
-                                  style={{ maxHeight: '400px', objectFit: 'contain' }}
-                                />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 flex items-center justify-center">
-                                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-600 text-sm bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-                                    Click to expand visualization
+                                  return <p className="text-gray-600 whitespace-pre-wrap leading-relaxed">{children}</p>;
+                                },
+                                strong: ({children}) => (
+                                  <span className="font-semibold text-gray-800 bg-gray-200/50 px-1.5 py-0.5 rounded">
+                                    {children}
                                   </span>
+                                ),
+                                li: ({children}) => (
+                                  <li className="text-gray-600 my-1">{children}</li>
+                                ),
+                                ul: ({children}) => (
+                                  <ul className="list-disc pl-4 my-2">{children}</ul>
+                                )
+                              }}
+                            >
+                              {result}
+                            </ReactMarkdown>
+                            {/* Add visualization display */}
+                            {message.viz_result && message.vizEnabledState && (
+                                <div className="mt-6 bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                                <div className="flex justify-between items-center mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-lg font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                      Visualization
+                                    </span>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400" />
+                                  </div>
+                                  <VizControls vizData={message.viz_result} />
                                 </div>
+                                <div 
+                                  className="overflow-hidden rounded-lg border border-gray-100 cursor-pointer
+                                    hover:border-blue-200/50 transition-all duration-300 relative group"
+                                  onClick={() => {
+                                    if (message.viz_result) {
+                                      setSelectedViz(message.viz_result);
+                                    }
+                                  }}
+                                >
+                                  <img 
+                                    src={message.viz_result} 
+                                    alt="Data Visualization" 
+                                    className="w-full max-w-2xl mx-auto hover:scale-102 transition-transform duration-300"
+                                    style={{ maxHeight: '400px', objectFit: 'contain' }}
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 flex items-center justify-center">
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-600 text-sm bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                                      Click to expand visualization
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-400 mt-2 text-center">
+                                  Click anywhere on the visualization to view in full screen
+                                </p>
                               </div>
-                              <p className="text-sm text-gray-400 mt-2 text-center">
-                                Click anywhere on the visualization to view in full screen
-                              </p>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    );
-                  })()}
+                      );
+                    })()}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-white">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]}
-                  className="prose prose-invert max-w-none prose-p:text-white 
-                    prose-headings:text-white prose-strong:text-white prose-p:leading-relaxed"
-                  components={{
-                    strong: ({children}) => (
-                      <span className="font-semibold text-white bg-white/10 px-1.5 py-0.5 rounded">
-                        {children}
-                      </span>
-                    ),
-                    p: ({children}) => (
-                      <p className="text-white whitespace-pre-wrap leading-relaxed">{children}</p>
-                    )
-                  }}
-                >
-                  {message.content}
-                </ReactMarkdown>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="text-white">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]}
+                    className="prose prose-invert max-w-none prose-p:text-white 
+                      prose-headings:text-white prose-strong:text-white prose-p:leading-relaxed"
+                      components={{
+                        strong: ({children}) => (
+                          <span className="font-semibold text-white bg-white/10 px-1.5 py-0.5 rounded">
+                            {children}
+                          </span>
+                        ),
+                        p: ({children}) => (
+                          <p className="text-white whitespace-pre-wrap leading-relaxed">{children}</p>
+                        )
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
+                </div>
+            </div>
+          ))}
+          {isLoading && <LoadingMessage />}
+          <div ref={messagesEndRef} />
+          <VizModal 
+            isOpen={!!selectedViz}
+            onClose={() => setSelectedViz(null)}
+            imageUrl={selectedViz || ''}
+          />
         </div>
-      ))}
-      {isLoading && <LoadingMessage />}
-      <div ref={messagesEndRef} />
-      <VizModal 
-        isOpen={!!selectedViz}
-        onClose={() => setSelectedViz(null)}
-        imageUrl={selectedViz || ''}
-      />
     </div>
   );
 };

@@ -7,8 +7,7 @@ import { ChatMessages } from '@/components/chat/ChatMessages';
 import { ChatLayout } from '@/components/chat/ChatLayout';
 import { DisconnectButton } from '@/components/ui/DisconnectButton';
 import { Header } from '@/components/layout/Header';
-import { ToggleSwitch } from '@/components/common/ToggleSwitch';
-import { TabularModeToggle } from '@/components/common/TabularModeToggle';
+
 import { Message } from '@/types/chat';
 
 export default function DatabaseChat() {
@@ -18,6 +17,7 @@ export default function DatabaseChat() {
     const [isLoading, setIsLoading] = useState(false);
     const [showInitialText, setShowInitialText] = useState(true);
     const [isEntering, setIsEntering] = useState(false);
+    
     const [connectedDBInfo, setConnectedDBInfo] = useState<{
       type: string;
       name: string;
@@ -109,11 +109,6 @@ export default function DatabaseChat() {
         <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
           <Logo minimal isTransitioning />
 
-          <div className="fixed top-24 left-6 z-[100] animate-fade-in flex flex-col gap-4">
-            <ToggleSwitch enabled={vizEnabled} setEnabled={setVizEnabled} />
-            <TabularModeToggle enabled={tabularMode} setEnabled={setTabularMode} />
-         </div>
-          
           {connectedDBInfo && (
             <div className="fixed top-4 right-4 z-[100]">
               <DisconnectButton
@@ -134,11 +129,14 @@ export default function DatabaseChat() {
             <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0 overflow-y-auto">
             <div className="max-w-[85rem] mx-auto">
-              <ChatMessages 
-                messages={messages} 
-                isLoading={isLoading} 
-                vizEnabled={vizEnabled}
-              />
+            <ChatMessages
+            messages={messages}
+            isLoading={isLoading}
+            vizEnabled={vizEnabled}
+            setVizEnabled={setVizEnabled}
+            tabularMode={tabularMode}
+            setTabularMode={setTabularMode}
+            />
             </div>
           </div>
         </div>
