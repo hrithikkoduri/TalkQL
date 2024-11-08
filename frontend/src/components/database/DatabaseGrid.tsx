@@ -20,11 +20,21 @@ export const DatabaseGrid = ({
   const [hoveredDB, setHoveredDB] = useState<DBType | null>(null);
 
   return (
-    <div className={`w-full grid grid-cols-3 relative max-w-[600px] min-h-[500px] transition-all duration-500 ${
-      selectedDB ? 'gap-x-12 gap-y-16' : 'gap-x-4 gap-y-8'
-    }`}>
+    <motion.div
+      layout
+      className="w-full grid grid-cols-3 relative max-w-[700px] gap-16 min-h-[500px]"
+      initial={false}
+      animate={{
+        gap: selectedDB ? "3rem" : "2rem",
+      }}
+      transition={{
+        duration: 0.5,
+        ease: "easeInOut",
+      }}
+    >
       {databases.map((dbType, index) => (
         <motion.div
+          layout
           key={dbType}
           className="relative"
           initial={{ scale: 0.5, opacity: 0 }}
@@ -38,7 +48,11 @@ export const DatabaseGrid = ({
           transition={{ 
             type: "spring",
             stiffness: 400,
-            damping: 30
+            damping: 30,
+            layout: {
+              duration: 0.5,
+              ease: "easeInOut"
+            }
           }}
         >
           <DatabaseCard
@@ -51,6 +65,6 @@ export const DatabaseGrid = ({
           />
         </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 };

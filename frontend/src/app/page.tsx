@@ -14,6 +14,7 @@ import { ConnectionSuccess } from '@/components/database/ConnectionSuccess';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';  // Add this import
 import { StartPage } from '@/components/landing/StartPage';
+import { motion } from 'framer-motion';
 
 
 
@@ -227,10 +228,25 @@ export default function Home() {
             </div>
           </div>
             ) : (
-              <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300 ${
-                selectedDB ? 'min-h-[800px]' : 'min-h-[550px]'
-              }`}>               
-               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+              <motion.div
+                layout
+                className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-card 
+                  hover:shadow-card-hover border border-gray-100/50 p-8 
+                  relative overflow-hidden"
+                initial={false}
+                animate={{
+                  height: selectedDB ? 800 : 750,
+                }}
+                transition={{
+                  duration: 0.5,
+                  ease: "easeInOut",
+                  layout: {
+                    duration: 0.5,
+                    ease: "easeInOut"
+                  }
+                }}
+              >
+                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
                 <div className="text-center space-y-4 mb-8">
                   <h2 className="text-3xl font-bold text-gray-500">
@@ -255,7 +271,7 @@ export default function Home() {
                   </div>
                 )}
 
-                <div className="flex gap-9 justify-center items-start h-full ">
+                <div className="flex gap-9 justify-center items-start h-full pt-8 pl-8">
                   <DatabaseGrid
                     selectedDB={selectedDB}
                     isConnecting={isConnecting}
@@ -265,11 +281,11 @@ export default function Home() {
 
                   <div className={`transition-all duration-500 ease-in-out ${
                     selectedDB 
-                      ? 'w-[700px] opacity-100 translate-x-0' 
+                      ? 'w-[800px] opacity-100 translate-x-0' 
                       : 'w-0 opacity-0 translate-x-full'
                   }`}>
                     {selectedDB && (
-                      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 pr-25 border border-gray-200/50 shadow-lg -mt-8">
                         <div className="flex items-center space-x-3 mb-6">
                           <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow-sm">
                             <BeakerIcon className="h-5 w-5 text-blue-600" />
@@ -289,7 +305,7 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
           <LoadingOverlay isVisible={isConnecting} />
