@@ -13,3 +13,5 @@ example_db_connection_query.txt
 uploads/
 *.csv
 uploads/
+backend/customers-2000000.csv
+*.csv
