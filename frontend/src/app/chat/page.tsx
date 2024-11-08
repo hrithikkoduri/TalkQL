@@ -11,7 +11,7 @@ import { Header } from '@/components/layout/Header';
 import { Message } from '@/types/chat';
 
 export default function DatabaseChat() {
-    const [vizEnabled, setVizEnabled] = useState(true);
+    const [vizEnabled, setVizEnabled] = useState(false);
     const [tabularMode, setTabularMode] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);

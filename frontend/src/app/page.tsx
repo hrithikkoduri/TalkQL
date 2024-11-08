@@ -13,6 +13,7 @@ import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { ConnectionSuccess } from '@/components/database/ConnectionSuccess';
 import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/layout/Logo';  // Add this import
+import { StartPage } from '@/components/landing/StartPage';
 
 
 
@@ -27,6 +28,8 @@ const dbLogos = {
 
 export default function Home() {
   const router = useRouter();
+  const [showStartPage, setShowStartPage] = useState(true);
+  const [isStartPageExiting, setIsStartPageExiting] = useState(false);
   const [selectedDB, setSelectedDB] = useState<DBType | null>(null);
   const [dbParams, setDBParams] = useState<Record<string, string | File>>({});
   const [isConnected, setIsConnected] = useState(false);
@@ -43,6 +46,13 @@ export default function Home() {
     setTimeout(() => {
       router.push('/chat');
     }, 500);
+  };
+
+  const handleStart = () => {
+    setIsStartPageExiting(true);
+    setTimeout(() => {
+      setShowStartPage(false);
+    }, 700);
   };
 
   const [connectedDBInfo, setConnectedDBInfo] = useState<{
@@ -171,7 +181,11 @@ export default function Home() {
   };
 
   return (
-<main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-40 pb-12 px-4 relative">      
+
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-40 pb-12 px-4 relative">
+        {showStartPage && (
+          <StartPage onStart={handleStart} isExiting={isStartPageExiting} />
+        )}      
     {isInitializing ? (
         <StartupLoader />
       ) : (
@@ -188,7 +202,7 @@ export default function Home() {
 
 
         <div className={`transition-all duration-500 mx-auto ${
-          selectedDB ? 'max-w-7xl' : 'max-w-2xl'
+          selectedDB ? 'max-w-[90rem]' : 'max-w-3xl'
         }`}>
           <Logo isTransitioning={isHeaderExiting} />
             
@@ -214,7 +228,7 @@ export default function Home() {
           </div>
             ) : (
               <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300 ${
-                selectedDB ? 'min-h-[700px]' : 'min-h-[550px]'
+                selectedDB ? 'min-h-[800px]' : 'min-h-[550px]'
               }`}>               
                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
@@ -241,7 +255,7 @@ export default function Home() {
                   </div>
                 )}
 
-                <div className="flex gap-8">
+                <div className="flex gap-9 justify-center items-start h-full ">
                   <DatabaseGrid
                     selectedDB={selectedDB}
                     isConnecting={isConnecting}
@@ -251,7 +265,7 @@ export default function Home() {
 
                   <div className={`transition-all duration-500 ease-in-out ${
                     selectedDB 
-                      ? 'w-1/2 opacity-100 translate-x-0' 
+                      ? 'w-[700px] opacity-100 translate-x-0' 
                       : 'w-0 opacity-0 translate-x-full'
                   }`}>
                     {selectedDB && (

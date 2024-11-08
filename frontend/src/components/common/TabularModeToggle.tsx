@@ -70,7 +70,7 @@ export const TabularModeToggle = ({ enabled, setEnabled }: TabularModeToggleProp
                 animate={{
                   background: enabled 
                     ? 'linear-gradient(to right, #3B82F6, #9333EA)' 
-                    : '#D1D5DB',
+                    : '#E5E7EB',
                 }}
                 className="w-12 h-6 rounded-full relative p-0.5"
               >
@@ -81,6 +81,7 @@ export const TabularModeToggle = ({ enabled, setEnabled }: TabularModeToggleProp
                       ? 'linear-gradient(to right, #EFF6FF, #F5F3FF)' 
                       : '#FFFFFF'
                   }}
+                  initial={{ x: 0 }}
                   transition={{
                     type: "spring",
                     stiffness: 500,

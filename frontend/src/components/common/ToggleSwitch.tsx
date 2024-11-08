@@ -70,8 +70,9 @@ export const ToggleSwitch = ({ enabled, setEnabled }: ToggleSwitchProps) => {
                 animate={{
                   background: enabled 
                     ? 'linear-gradient(to right, #9333EA, #3B82F6)' 
-                    : '#D1D5DB',
+                    : '#E5E7EB',
                 }}
+                initial={{ background: '#E5E7EB' }}
                 className="w-12 h-6 rounded-full relative p-0.5"
               >
                 <motion.div
@@ -81,6 +82,7 @@ export const ToggleSwitch = ({ enabled, setEnabled }: ToggleSwitchProps) => {
                       ? 'linear-gradient(to right, #F5F3FF, #EFF6FF)' 
                       : '#FFFFFF'
                   }}
+                  initial={{ x: 0, background: '#FFFFFF' }}
                   transition={{
                     type: "spring",
                     stiffness: 500,

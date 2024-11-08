@@ -19,51 +19,38 @@ export const DatabaseGrid = ({
   const databases = ['sqlite', 'mysql', 'postgresql', 'mssql', 'snowflake', 'csv'] as const;
   const [hoveredDB, setHoveredDB] = useState<DBType | null>(null);
 
-  const handleDBSelect = (dbType: DBType) => {
-    if (selectedDB === dbType) {
-      onSelectDB(null);
-    } else {
-      onSelectDB(dbType);
-    }
-  };
-
   return (
-    <div className={`transition-all duration-500 perspective-3d ${
-      selectedDB ? 'w-1/2' : 'w-full'
+    <div className={`w-full grid grid-cols-3 relative max-w-[600px] min-h-[500px] transition-all duration-500 ${
+      selectedDB ? 'gap-x-12 gap-y-16' : 'gap-x-4 gap-y-8'
     }`}>
-      <motion.div 
-        className="grid grid-cols-2 md:grid-cols-3 gap-12 relative"
-        style={{ transformStyle: 'preserve-3d' }}
-      >
-        {databases.map((dbType, index) => (
-          <motion.div
-            key={dbType}
-            className="relative"
-            initial={{ opacity: 0, rotateY: -30, z: -100 }}
-            animate={{ 
-              opacity: 1,
-              rotateY: hoveredDB === dbType ? 0 : -15,
-              z: hoveredDB === dbType ? 50 : 0,
-              scale: selectedDB === dbType ? 1.1 : 1
-            }}
-            transition={{ 
-              type: "spring",
-              stiffness: 400,
-              damping: 30,
-              delay: index * 0.1 
-            }}
-          >
-            <DatabaseCard
-              dbType={dbType}
-              isSelected={selectedDB === dbType}
-              isConnecting={isConnecting}
-              onClick={() => handleDBSelect(dbType)}
-              logoSrc={dbLogos[dbType]}
-              onHover={(isHovered) => setHoveredDB(isHovered ? dbType : null)}
-            />
-          </motion.div>
-        ))}
-      </motion.div>
+      {databases.map((dbType, index) => (
+        <motion.div
+          key={dbType}
+          className="relative"
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ 
+            scale: 1,
+            opacity: 1,
+            zIndex: selectedDB === dbType ? 10 : 1,
+            x: selectedDB && selectedDB !== dbType ? (index % 3 - 1) * 20 : 0,
+            y: selectedDB && selectedDB !== dbType ? (Math.floor(index / 3) - 1) * 20 : 0
+          }}
+          transition={{ 
+            type: "spring",
+            stiffness: 400,
+            damping: 30
+          }}
+        >
+          <DatabaseCard
+            dbType={dbType}
+            isSelected={selectedDB === dbType}
+            isConnecting={isConnecting}
+            onClick={() => onSelectDB(dbType === selectedDB ? null : dbType)}
+            logoSrc={dbLogos[dbType]}
+            onHover={(isHovered) => setHoveredDB(isHovered ? dbType : null)}
+          />
+        </motion.div>
+      ))}
     </div>
   );
 };
