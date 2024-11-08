@@ -6,3 +6,8 @@ test.ipynb
 .DS_Store
 test2.ipynb
 customers-1000.csv
+downloaded.csv
+downloaded_database.db
+db_store.sqlite
+example_db_connection_query.txt
+uploads/
