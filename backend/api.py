@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from pydantic import BaseModel, Field
 from requests import request
 from sql_agent import SQLAgent
@@ -9,6 +9,12 @@ import sqlite3
 import json
 from langchain_openai import ChatOpenAI
 import logging
+import pandas as pd
+import os
+import requests
+import tempfile
+import time
+import io
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -56,46 +62,30 @@ async def check_connection():
     try:
         conn = sqlite3.connect('db_store.sqlite')
         cursor = conn.cursor()
-        cursor.execute('SELECT db_type, connection_params FROM connections LIMIT 1')
+        cursor.execute('SELECT db_type, connection_params FROM connections ORDER BY id DESC LIMIT 1')
         result = cursor.fetchone()
         conn.close()
 
         if result:
             db_type, connection_params = result
             params = json.loads(connection_params)
+            database_name = None
             
-            # Reinitialize the SQL agent connection
-            try:
-                sql_agent.add_db(
-                    db_type=db_type,
-                    **params
-                )
-                sql_agent.get_db()  # Initialize the database connection
-                
-                return {
-                    "is_connected": True,
-                    "db_type": db_type,
-                    "database_name": params.get('database') or params.get('db_path') or 'Database'
-                }
-            except Exception as e:
-                logger.error(f"Error reinitializing database connection: {str(e)}")
-                return {
-                    "is_connected": False,
-                    "db_type": None,
-                    "database_name": None
-                }
-        return {
-            "is_connected": False,
-            "db_type": None,
-            "database_name": None
-        }
+            if db_type == 'sqlite':
+                database_name = params.get('db_path', '').split('/')[-1]
+            elif db_type == 'csv':
+                database_name = params.get('file_path', '').split('/')[-1]
+            else:
+                database_name = params.get('database', 'Database')
+
+            return {
+                "is_connected": True,
+                "db_type": db_type,
+                "database_name": database_name
+            }
+        return {"is_connected": False}
     except Exception as e:
-        logger.error(f"Error checking connection: {str(e)}")
-        return {
-            "is_connected": False,
-            "db_type": None,
-            "database_name": None
-        }
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/disconnect-database")
 async def disconnect_database():
@@ -110,41 +100,74 @@ async def disconnect_database():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/add-database")
-async def add_database(connection: DatabaseConnection):
+async def add_database(
+    file: Optional[UploadFile] = None,
+    connection: str = Form(...)
+):
     try:
-        # First try to connect using sql_agent
-        sql_agent.add_db(
-            db_type=connection.db_type,
-            **connection.connection_params
-        )
-        
-        # If connection successful, store the connection info
+        connection_data = json.loads(connection)
+        db_type = connection_data["db_type"]
+        connection_params = connection_data["connection_params"]
+
+        if db_type == "csv":
+            if file:
+                # Handle file upload
+                os.makedirs("uploads", exist_ok=True)
+                file_path = f"uploads/{file.filename}"
+                content = await file.read()
+                
+                # Validate CSV content
+                try:
+                    pd.read_csv(io.BytesIO(content))
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid CSV file: {str(e)}"
+                    )
+                
+                with open(file_path, "wb") as f:
+                    f.write(content)
+                connection_params["file_path"] = file_path
+                
+            elif "url" in connection_params:
+                # URL validation will be handled by sql_agent
+                pass
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Either file or URL is required for CSV connection"
+                )
+
+        # Rest of your connection code...
+
+        # Store connection info
         conn = sqlite3.connect('db_store.sqlite')
         cursor = conn.cursor()
-        
-        # Create table if it doesn't exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS connections (
-                id INTEGER PRIMARY KEY,
-                db_type TEXT,
-                connection_params TEXT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                db_type TEXT NOT NULL,
+                connection_params TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
-        
-        # Clear existing connections
         cursor.execute('DELETE FROM connections')
-        
-        # Store the new connection
         cursor.execute(
             'INSERT INTO connections (db_type, connection_params) VALUES (?, ?)',
-            (connection.db_type, json.dumps(connection.connection_params))
+            (db_type, json.dumps(connection_params))
         )
         conn.commit()
         conn.close()
 
+        # Connect using sql_agent
+        sql_agent.add_db(
+            db_type=db_type,
+            **connection_params
+        )
+        
         return {"message": "Database connected successfully"}
     except Exception as e:
+        logger.error(f"Error connecting to database: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.post("/query", response_model=QueryResponse)

@@ -6,7 +6,7 @@ import { DatabaseGrid } from '@/components/database/DatabaseGrid';
 import { ConnectionForm } from '@/components/database/ConnectionForm';
 import { LoadingOverlay } from '@/components/database/LoadingOverlay';
 import { StartupLoader } from '@/components/ui/StartupLoader';
-import { DBType } from '@/types/database';
+import { DBParams, DBType } from '@/types/database';
 import { DisconnectButton } from '@/components/ui/DisconnectButton';
 import { ServerIcon, CheckCircleIcon, BeakerIcon } from '@heroicons/react/24/outline';
 import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
@@ -20,13 +20,15 @@ const dbLogos = {
   sqlite: '/images/databases/sqlite.png',
   mysql: '/images/databases/mysql.png',
   postgresql: '/images/databases/postgresql.png',
-  mssql: '/images/databases/mssql.png'
+  mssql: '/images/databases/mssql.png',
+  snowflake: '/images/databases/snowflake.png',
+  csv: '/images/databases/csv.png'
 } as const;
 
 export default function Home() {
   const router = useRouter();
   const [selectedDB, setSelectedDB] = useState<DBType | null>(null);
-  const [dbParams, setDBParams] = useState<Record<string, string>>({});
+  const [dbParams, setDBParams] = useState<Record<string, string | File>>({});
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,15 +103,10 @@ export default function Home() {
     }
   };
 
-  const handleDBSelect = (dbType: DBType) => {
-    if (selectedDB === dbType) {
-      setSelectedDB(null);
+  const handleDBSelect = (dbType: DBType | null) => {
+    setSelectedDB(dbType);
+    if (!dbType) {
       setDBParams({});
-      setError(null);
-    } else {
-      setSelectedDB(dbType);
-      setDBParams({});
-      setError(null);
     }
   };
 
@@ -119,33 +116,58 @@ export default function Home() {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8000/add-database', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const formData = new FormData();
+      
+      if (selectedDB === 'csv') {
+        const csvParams = dbParams as DBParams['csv'];
+        if (csvParams.file) {
+          formData.append('file', csvParams.file);
+          formData.append('connection', JSON.stringify({
+            db_type: selectedDB,
+            connection_params: {}
+          }));
+        } else if (csvParams.url) {
+          formData.append('connection', JSON.stringify({
+            db_type: selectedDB,
+            connection_params: {
+              url: csvParams.url
+            }
+          }));
+        }
+      } else {
+        formData.append('connection', JSON.stringify({
           db_type: selectedDB,
           connection_params: dbParams
-        }),
+        }));
+      }
+
+      const response = await fetch('http://localhost:8000/add-database', {
+        method: 'POST',
+        body: formData,
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Failed to connect to database');
       }
-  
+
       const data = await response.json();
       setIsConnected(true);
       setConnectedDBInfo({
         type: selectedDB!,
-        name: dbParams.database || dbParams.db_path || 'SQLite Database'
+        name: selectedDB === 'csv' 
+          ? ((dbParams as DBParams['csv']).file?.name || 'CSV Data') 
+          : (dbParams as any).database || (dbParams as any).db_path || 'Database'
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsConnecting(false);
     }
+  };
+
+  const handleParamChange = (field: string, value: string | File) => {
+    setDBParams(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -166,7 +188,7 @@ export default function Home() {
 
 
         <div className={`transition-all duration-500 mx-auto ${
-          selectedDB ? 'max-w-6xl' : 'max-w-2xl'
+          selectedDB ? 'max-w-7xl' : 'max-w-2xl'
         }`}>
           <Logo isTransitioning={isHeaderExiting} />
             
@@ -191,8 +213,10 @@ export default function Home() {
             </div>
           </div>
             ) : (
-              <div className="bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300">
-                <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
+              <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300 ${
+                selectedDB ? 'min-h-[700px]' : 'min-h-[550px]'
+              }`}>               
+               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
                 <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
                 <div className="text-center space-y-4 mb-8">
                   <h2 className="text-3xl font-bold text-gray-500">
@@ -244,9 +268,7 @@ export default function Home() {
                           selectedDB={selectedDB}
                           dbParams={dbParams}
                           isConnecting={isConnecting}
-                          onParamChange={(field, value) => 
-                            setDBParams(prev => ({ ...prev, [field]: value }))
-                          }
+                          onParamChange={handleParamChange}
                           onSubmit={handleDBConnect}
                         />
                       </div>

@@ -24,18 +24,34 @@ export default function DatabaseChat() {
     } | null>(null);
   
     useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const dbType = params.get('dbType');
+      const dbName = params.get('dbName');
+      
+      if (dbType && dbName) {
+        setConnectedDBInfo({
+          type: dbType,
+          name: dbName
+        });
+        return;
+      }
+  
       const checkConnection = async () => {
         try {
           const response = await fetch('http://localhost:8000/check-connection');
           const data = await response.json();
+          
           if (data.is_connected) {
             setConnectedDBInfo({
               type: data.db_type,
               name: data.database_name || 'Database'
             });
+          } else {
+            window.location.href = '/';
           }
         } catch (error) {
           console.error('Error checking connection:', error);
+          window.location.href = '/';
         }
       };
   
@@ -98,6 +114,7 @@ export default function DatabaseChat() {
           method: 'POST'
         });
         if (response.ok) {
+          setConnectedDBInfo(null);
           window.location.href = '/';
         }
       } catch (error) {

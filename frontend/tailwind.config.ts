@@ -8,6 +8,12 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      perspective: {
+        '3d': '1000px',
+      },
+      transformStyle: {
+        '3d': 'preserve-3d',
+      },
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
@@ -36,7 +42,11 @@ const config: Config = {
       animation: {
         'fade-in': 'fade-in 0.3s ease-out forwards',
         'slide-in': 'slide-in 0.5s ease-out',
-        'shake': 'shake 0.5s ease-in-out'
+        'shake': 'shake 0.5s ease-in-out',
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
+      transitionProperty: {
+        'filter': 'filter',
       },
       boxShadow: {
         'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',

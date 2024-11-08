@@ -1,9 +1,9 @@
-export type DBType = 'sqlite' | 'mysql' | 'postgresql' | 'mssql';
+export type DBType = 'sqlite' | 'mysql' | 'postgresql' | 'mssql' | 'snowflake' | 'csv';
 
 export interface DBParams {
   sqlite: {
     url?: string;
-    db_path?: string;
+    file?: File;
   };
   mysql: {
     user: string;
@@ -26,5 +26,17 @@ export interface DBParams {
     port: string;
     database: string;
     driver: string;
+  };
+  snowflake: {
+    account: string;
+    user: string;
+    password: string;
+    warehouse: string;
+    database: string;
+    schema: string;
+  };
+  csv: {
+    url?: string;
+    file?: File;
   };
 }

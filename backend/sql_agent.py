@@ -13,6 +13,9 @@ from typing_extensions import TypedDict
 from langgraph.graph import END, StateGraph, START
 from langgraph.graph.message import AnyMessage, add_messages
 from langchain_community.utilities import SQLDatabase
+import pandas as pd
+import sqlite3
+import tempfile
 
 
 load_dotenv()
@@ -54,7 +57,7 @@ class SQLAgent:
         Set up database connection based on the database type
         
         Args:
-            db_type: Type of database (sqlite, mysql, postgresql, mssql)
+            db_type: Type of database (sqlite, mysql, postgresql, mssql, snowflake, csv)
             connection_params: Database connection parameters
         """
         if db_type.lower() == "sqlite":
@@ -105,6 +108,55 @@ class SQLAgent:
             
             # Format for MS SQL Server connection string
             self.db_uri = f"mssql+pyodbc://{user}:{password}@{host}:{port}/{database}?driver={driver.replace(' ', '+')}"
+        
+        elif db_type.lower() == "snowflake":
+            account = connection_params.get("account")
+            user = connection_params.get("user")
+            password = connection_params.get("password")
+            warehouse = connection_params.get("warehouse")
+            database = connection_params.get("database")
+            schema = connection_params.get("schema")
+            
+            if not all([account, user, password, warehouse, database, schema]):
+                raise ValueError("All fields are required for Snowflake connection")
+                
+            self.db_uri = f"snowflake://{user}:{password}@{account}/{database}/{schema}?warehouse={warehouse}"
+        
+        elif db_type.lower() == "csv":
+            file_path = connection_params.get("file_path")
+            url = connection_params.get("url")
+            delimiter = connection_params.get("delimiter", ",")
+            
+            try:
+                if file_path:
+                    df = pd.read_csv(file_path, delimiter=delimiter)
+                elif url:
+                    # Add headers to ensure we get CSV content
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0',
+                        'Accept': 'text/csv,application/csv,text/plain'
+                    }
+                    response = requests.get(url, headers=headers)
+                    
+                    if 'text/html' in response.headers.get('content-type', '').lower():
+                        raise ValueError("URL returned HTML content instead of CSV data")
+                    
+                    # Save content to temporary file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv') as tmp:
+                        tmp.write(response.content)
+                        file_path = tmp.name
+                    
+                    df = pd.read_csv(file_path, delimiter=delimiter)
+                else:
+                    raise ValueError("Either file_path or url is required for CSV connection")
+                
+                # Create SQLite database from CSV
+                df.to_sql("csv_data", sqlite3.connect("csv_database.db"), 
+                         if_exists="replace", index=False)
+                self.db_uri = "sqlite:///csv_database.db"
+                
+            except Exception as e:
+                raise ValueError(f"Failed to process CSV: {str(e)}")
         
         else:
             raise ValueError(f"Unsupported database type: {db_type}")
