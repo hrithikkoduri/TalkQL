@@ -137,11 +137,11 @@ export const ConnectionForm = ({
               Database URL
             </label>
             <input
-              type="url"
+              type="text"
               placeholder="sqlite:///path/to/db.sqlite"
               value={(dbParams as DBParams['sqlite']).url || ''}
               onChange={(e) => onParamChange('url', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isConnecting || !!(dbParams as DBParams['sqlite']).file}
             />
           </div>
@@ -167,9 +167,6 @@ export const ConnectionForm = ({
               className="block text-sm font-medium text-gray-700"
             >
               {field.charAt(0).toUpperCase() + field.slice(1)}
-              {selectedDB === 'sqlite' && (
-                <span className="text-gray-400 text-xs ml-1">(optional)</span>
-              )}
             </label>
             <input
               type={field === 'password' ? 'password' : 'text'}
@@ -197,7 +194,7 @@ export const ConnectionForm = ({
             <div className="flex gap-2">
               <InformationCircleIcon className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-blue-700">
-                Upload a CSV file or provide a URL to your CSV data.
+                Upload a CSV file or provide a URL.
               </p>
             </div>
           </div>
@@ -206,7 +203,7 @@ export const ConnectionForm = ({
             <label className="flex flex-col items-center cursor-pointer">
               <ArrowUpTrayIcon className="h-8 w-8 text-gray-400" />
               <span className="mt-2 text-sm text-gray-500">
-                {selectedDB === 'csv' && (dbParams as DBParams['csv']).file
+                {(dbParams as DBParams['csv']).file
                   ? (dbParams as DBParams['csv']).file?.name
                   : 'Click to upload CSV'
                 }
@@ -234,7 +231,7 @@ export const ConnectionForm = ({
               placeholder="https://example.com/data.csv"
               value={(dbParams as DBParams['csv']).url || ''}
               onChange={(e) => handleURLChange(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isConnecting || !!(dbParams as DBParams['csv']).file}
             />
           </div>
@@ -267,7 +264,6 @@ export const ConnectionForm = ({
         )}
       </button>
 
-      {/* Helper text for different database types */}
       <div className="text-xs text-gray-500">
         {selectedDB === 'mysql' && (
           <p>Default MySQL port: 3306</p>

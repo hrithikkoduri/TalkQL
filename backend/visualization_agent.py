@@ -14,6 +14,7 @@ import base64  # Add this import
 import matplotlib
 matplotlib.use('Agg')  # Set this before importing pyplot
 import matplotlib.pyplot as plt
+import numpy as np
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,6 +24,9 @@ class State(TypedDict):
 
 class VisualizationCode(BaseModel):
     code: str = Field(..., description="Should only and only consists of valid Python code snippet that can be executed to create a visualization")
+
+class VisualizationAdvice(BaseModel):
+    advice: str = Field(..., description="Should only and only consists of valid advice on how to create the best, intuitive and comprehensive visualization")
 
 class VisualizationAgent:
     def __init__(self):
@@ -37,236 +41,95 @@ class VisualizationAgent:
         print("---------------------------------------------------------------------------")
         
         create_python_code_system = """
-        You are a data visualization expert. Create intuitive and comprehensive visualizations from SQL query results that make the data immediately understandable without needing to reference the original query.
 
-        Core Principles:
+            You are a data visualization expert. Create intuitive and comprehensive visualizations from SQL query results that make the data immediately understandable without referencing the original query. Place significant emphasis on data labeling to enhance clarity.
+            You are also given some advice on how to create the best, intuitive and comprehensive visualization.
 
-        1. Data Analysis & Preprocessing:
-        - Analyze input structure (SQL results format)
-        - Distinguish between metrics (quantitative) and dimensions (categorical/temporal)
-        - Identify hierarchies and relationships in the data
-        - Handle null values and format conversions appropriately
-        - Apply meaningful sorting (e.g., by key metrics, chronologically, alphabetically)
-        - Calculate derived metrics when valuable (e.g., % of total, growth rates)
+            **Core Principles:**
 
-        2. Visualization Selection Logic:
-        - Categorical Analysis:
-            * Horizontal bars for 7+ categories
-            * Vertical bars for fewer categories
-            * Include totals and averages as reference lines
-            * Use pie/donut only for composition (<= 6 categories)
-        - Time Series:
-            * Line charts for continuous trends
-            * Bar charts for discrete periodic data
-            * Mark YoY/MoM changes
-            * Highlight min/max points
-        - Comparisons:
-            * Grouped bars for direct category comparisons
-            * Stacked bars for part-to-whole relationships
-            * Scatter plots for correlations
-            * Combo charts for mixed metric types
+            1. **Data Analysis & Preprocessing:**
+            - Understand the structure of SQL results.
+            - Distinguish between metrics (quantitative) and dimensions (categorical/temporal).
+            - Identify data hierarchies and relationships.
+            - Handle null values and format data appropriately.
+            - Apply meaningful sorting (e.g., by key metrics, chronological order).
+            - Calculate derived metrics when useful (e.g., percentages, growth rates).
 
-        3. Comprehensive Labeling:
-        - Data Point Labels:
-            * Show actual values on/near data points
-            * Include % of total where relevant
-            * Add growth indicators (+/-%)
-            * Position labels to avoid overlap
-        - Axis Labels:
-            * Clear metric names with units
-            * Smart scale formatting (K, M, B)
-            * Appropriate date formatting
-            * Avoid truncated labels
-        - Annotations:
-            * Total/Average indicators
-            * Period-over-period changes
-            * Rankings or relative positions
-            * Notable outliers or trends
-            * Brief explanatory notes where needed
+            2. **Visualization Selection:**
+            - **Categorical Data:**
+                - Use horizontal bar charts for 7 or more categories.
+                - Use vertical bar charts for fewer categories.
+                - Include totals and averages as reference lines.
+                - Avoid pie/donut charts unless displaying compositions with 6 or fewer categories.
+            - **Time Series:**
+                - Use line charts for continuous trends.
+                - Use bar charts for discrete time periods.
+                - Mark year-over-year or month-over-month changes.
+                - Highlight minimum and maximum points.
+            - **Comparisons:**
+                - Use grouped or stacked bar charts for comparisons.
+                - Use scatter plots for correlations.
+                - Use combo charts for mixed metric types.
+            - **Multi-Axis Design:**
+                - When data ranges differ significantly, use separate axes to improve clarity and readability.
+                - Implement dual-axis charts to display metrics with different scales effectively.
 
-        4. Layout & Design:
-        - Figure dimensions: plt.figure(figsize=(12, 7))
-        - Margins: plt.margins(y=0.2)
-        - Title hierarchy:
-            * Main title: Key insight from data
-            * Subtitle: Context and time period
-            * Caption: Data source/notes
-        - Legend placement: Optimal position based on chart space
-        - Grid: Light guidelines (alpha=0.2)
-        - Font sizes:
-            * Title: 14pt bold
-            * Labels: 10pt
-            * Annotations: 9pt
+            3. **Comprehensive Labeling:**
+            - **Data Point Labels:**
+                - Display actual values on or near data points.
+                - Include percentages of total where relevant.
+                - Add growth indicators (e.g., ±%).
+                - Position labels to avoid overlap between data labels and different data representations. Use offsets or callouts if necessary.
+            - **Axis Labels:**
+                - Use clear, descriptive labels with units.
+                - Format scales appropriately (e.g., K for thousands, M for millions).
+                - Apply proper date formats.
+                - Avoid truncated labels.
+            - **Annotations:**
+                - Indicate totals, averages, and significant changes.
+                - Highlight outliers or notable trends.
+                - Include brief explanatory notes when necessary.
 
-        5. Color Standards:
-        Primary colors:
-        - Main metric: '#6366F1' (Indigo-500)
-        - Secondary: '#818CF8' (Indigo-400)
-        - Tertiary: '#A5B4FC' (Indigo-300)
-        - Highlight: '#E11D48' (Rose-600)
-        - Positive: '#22C55E' (Green-600)
-        - Negative: '#EF4444' (Red-500)
-        Settings:
-        - Bar/line opacity: alpha=0.8
-        - Grid opacity: alpha=0.2
-        - Use darker shades for emphasis
+            4. **Layout & Design:**
+            - Set appropriate figure dimensions and margins (e.g., `plt.figure(figsize=(12, 7))`). Adjust the figure size if needed to prevent overlapping elements.
+            - Apply a clear title hierarchy:
+                - **Main Title:** Convey key insights.
+                - **Subtitle:** Provide context and time period.
+                - **Caption:** Include data sources or notes.
+            - Position legends optimally based on chart space, ensuring they do not overlap with chart elements.
+            - Use light gridlines for reference (`alpha=0.2`).
+            - Apply consistent font sizes:
+                - **Title:** 14pt bold.
+                - **Labels:** 10pt.
+                - **Annotations:** 9pt.
 
-        Example Implementations:
+            5. **Color Standards:**
+            - Primary colors for consistency:
+                - Single series: '#6366F1' (Indigo-500)
+                - Two series: ['#6366F1', '#818CF8'] (Indigo-500, Indigo-400)
+                - Multiple series: Use color gradients from blue to purple
+                - Highlight colors: '#E11D48' (Rose-600) for emphasis
+                - Positive trends: '#22C55E' (Green-600)
+                - Negative trends: '#EF4444' (Red-500)
+            - Apply alpha=0.8 for main elements
+            - Use darker shades for important data points
+            - For categorical data, use evenly spaced colors from the blue-purple gradient
+            - Add subtle gradients for fill areas using alpha blending
 
-        1. Category Performance:
-        ```python
-        def plot_category_performance(df):
-            # Sort by primary metric descending
-            df_sorted = df.sort_values('primary_metric', ascending=True)
-            
-            fig, ax = plt.subplots(figsize=(12, 7))
-            
-            # Create horizontal bars
-            bars = ax.barh(df_sorted['category'], df_sorted['primary_metric'], 
-                        color='#6366F1', alpha=0.8)
-            
-            # Add value labels with growth/share
-            for i, bar in enumerate(bars):
-                width = bar.get_width()
-                growth = df_sorted['growth'].iloc[i]
-                share = df_sorted['primary_metric'].iloc[i] / df_sorted['primary_metric'].sum() * 100
-                
-                # Format growth color based on positive/negative
-                growth_color = '#22C55E' if growth > 0 else '#EF4444'
-                
-                # Add multi-line label
-                label = f'${{width:,.0f}}\n{{growth:+.1f}}%\n({{share:.1f}}% of total)'
-                ax.text(width, i, label, va='center', ha='left', fontsize=10,
-                        color=growth_color, fontweight='bold', x=width+width*0.02)
-            
-            # Customize appearance
-            ax.grid(True, axis='x', alpha=0.2)
-            ax.set_axisbelow(True)
-            
-            # Add title and labels
-            plt.title('Category Performance Overview', pad=20, fontsize=14, fontweight='bold')
-            plt.xlabel('Revenue ($)', fontsize=10)
-            
-            # Add total
-            total = df_sorted['primary_metric'].sum()
-            plt.figtext(0.99, 0.01, f'Total: ${{total:,.0f}}', 
-                        ha='right', fontsize=9, style='italic')
-            
-            plt.tight_layout()
+            **Key Considerations:**
 
-                    2. Time Series Analysis:
-                    def plot_time_series(df):
-            fig, ax1 = plt.subplots(figsize=(12, 7))
-            
-            # Primary metric bars
-            bars = ax1.bar(df['period'], df['primary_metric'], 
-                        color='#6366F1', alpha=0.8, label='Primary Metric')
-            
-            # Secondary metric line
-            ax2 = ax1.twinx()
-            line = ax2.plot(df['period'], df['secondary_metric'], 
-                            color='#E11D48', linewidth=2, marker='o', 
-                            label='Secondary Metric')
-            
-            # Add value labels with growth
-            for i, v in enumerate(df['primary_metric']):
-                # Calculate period-over-period growth
-                if i > 0:
-                    growth = ((v - df['primary_metric'].iloc[i-1]) / 
-                            df['primary_metric'].iloc[i-1] * 100)
-                    growth_text = f'\n({{growth:+.1f}}%)'
-                else:
-                    growth_text = ''
-                    
-                ax1.text(i, v, f'${{v:,.0f}}{{growth_text}}', 
-                        ha='center', va='bottom', fontsize=10)
-                
-                # Add secondary metric labels
-                sec_metric = df['secondary_metric'].iloc[i]
-                ax2.text(i, sec_metric, f'{{sec_metric:,.0f}}', 
-                        ha='center', va='bottom', color='#E11D48', fontsize=10)
-            
-            # Customize appearance
-            ax1.grid(True, alpha=0.2)
-            ax1.set_axisbelow(True)
-            
-            # Rotate x-labels if needed
-            plt.xticks(rotation=45 if len(df) > 6 else 0, ha='right')
-            
-            # Add title and labels
-            period_start = df['period'].iloc[0]
-            period_end = df['period'].iloc[-1]
-            title = f'Metric Performance Over Time\n'
-            subtitle = f'Period: {{period_start}} to {{period_end}}'
-            plt.title(title + subtitle, pad=20, fontsize=14, fontweight='bold')
-            
-            # Add legends
-            lines = [bars, line[0]]
-            labels = ['Primary Metric', 'Secondary Metric']
-            ax1.legend(lines, labels, loc='upper right', bbox_to_anchor=(1, 1.1))
-            
-            plt.tight_layout()
+            - Tailor the visualization to data complexity and audience needs.
+            - Ensure clarity and readability at intended display sizes.
+            - Use multi-axis or dual-axis designs to effectively communicate data with different value ranges.
+            - Include all necessary context within the visualization.
 
-                    3. Multi-Dimensional Analysis:
-                    def plot_multi_dimensional(df):
-            fig, ax = plt.subplots(figsize=(12, 7))
-            width = 0.35
-            x = np.arange(len(df['dimension']))
-            
-            # Create grouped bars
-            bars1 = ax.bar(x - width/2, df['metric1'], width, 
-                        color='#6366F1', alpha=0.8, label='Metric 1')
-            bars2 = ax.bar(x + width/2, df['metric2'], width, 
-                        color='#818CF8', alpha=0.8, label='Metric 2')
-            
-            # Add labels with multiple metrics
-            for i, (m1, m2) in enumerate(zip(df['metric1'], df['metric2'])):
-                # Calculate relative metrics
-                ratio = m2/m1 * 100
-                
-                # Add multi-line labels
-                ax.text(i - width/2, m1, f'${{m1:,.0f}}', 
-                        ha='center', va='bottom', fontsize=10)
-                ax.text(i + width/2, m2, f'${{m2:,.0f}}\n({{ratio:.1f}}%)', 
-                        ha='center', va='bottom', fontsize=10)
-            
-            # Customize appearance
-            ax.set_xticks(x)
-            ax.set_xticklabels(df['dimension'], rotation=45, ha='right')
-            ax.grid(True, alpha=0.2)
-            ax.set_axisbelow(True)
-            
-            # Add title and legend
-            plt.title('Multi-Metric Performance by Dimension', 
-                    pad=20, fontsize=14, fontweight='bold')
-            ax.legend(bbox_to_anchor=(1.05, 1))
-            
-            # Add totals
-            metric1_total = df['metric1'].sum()
-            metric2_total = df['metric2'].sum()
-            totals = f'Totals - Metric 1: ${{metric1_total:,.0f}}, '
-            totals += f'Metric 2: ${{metric2_total:,.0f}}'
-            plt.figtext(0.99, 0.01, totals, ha='right', fontsize=9, style='italic')
-            
-            plt.tight_layout()
+            **The final visualization should:**
 
-                    Key Visualization Considerations:
-
-        Data density and complexity
-        Number of dimensions and metrics
-        Value distributions and ranges
-        Presence of outliers or special cases
-        Target audience's analytical needs
-        Screen/display size constraints
-
-        The final visualization should:
-
-        Tell a complete data story at a glance
-        Highlight key insights and patterns
-        Show all relevant metrics clearly
-        Maintain proper proportion and scale
-        Be readable at intended display size
-        Include necessary context within the visualization
+            - Tell a complete data story at a glance.
+            - Highlight key insights and patterns.
+            - Clearly display all relevant metrics, using distinct axes if necessary.
+            - Maintain proper proportions and scales.
+            - Be uncluttered, well-organized, and immediately understandable.
         """
         
         create_python_code_prompt = ChatPromptTemplate.from_messages([
@@ -280,63 +143,164 @@ class VisualizationAgent:
         print("--------------------------------Python code created--------------------------------")
         return {"messages": state["messages"] + [AIMessage(content = f"{create_python_code_result.code}")]}
     
+    def viz_advice(self, state: State):
+        """Give advice on how to improve the visualization"""
+        messages = state["messages"]
+        print("---------------------------Giving advice on how to improve the visualization---------------------------")
+        print(f"Messages inside the viz_advice function: {messages}")
+        print("---------------------------------------------------------------------------")
+
+        viz_advice_system = """
+        You are a data visualization expert.
+        You are given a some information which was generate by querying a database.
+        Your job is to give advice on how to best visualize the data in the information provided to you.
+        Structure it as a prompt for a LLM to generate the visualization code.
+        Make sure that you take into account everything that is mentioned in the information provided to you and provide advice accordingly to create the best, intuitive and comprehensive visualization.
+        The instructions should also emphasis on data labeling to enhance clarity, proper axis labeling, proper data representation, proper color scheme, legend descriptions, proper spacing, proper figure size and overall layout to make the visualization more effective.
+        There should be no overlap in the graph elements, data labels, legends and the data labels should not overlap with each other.
+        
+        Use these information as guidlines to provide advice on how to create the best, intuitive and comprehensive visualization.-
+         **Instructions for the Visualization:**
+
+        1. **Data Labeling:**
+        - **Accuracy:** Ensure that all data labels correctly correspond to their respective data points.
+        - **Metrics:** Use appropriate metrics and units (e.g., percentages, currency, units of measurement) for all data labels.
+        - **Consistency:** Maintain consistent formatting and precision (e.g., number of decimal places) across all labels.
+
+
+        2. **X-Axis Tick Labels:**
+        - **Rotation for Readability:**
+            - Rotate the **x-axis tick labels** by **45 degrees** to improve readability.
+            - If labels still overlap after a 45-degree rotation:
+            - Rotate the tick labels by **90 degrees** (vertical orientation).
+            - **Adjust Font Size:** Reduce the font size of the tick labels to fit them without overlap.
+            - **Abbreviation:** Abbreviate or truncate the labels while ensuring they remain understandable.
+            - **Spacing:** Ensure there is adequate spacing between labels to prevent any overlapping.
+
+        3. **Prevent Data Label Overlapping:**
+        - **Detection of Overlaps:**
+            - Identify potential overlapping of data labels for all attributes, categories, or dimensions by checking for data points with values close in magnitude or proximity on the chart.
+        - **Spacing and Positioning:**
+            - **Space Out Labels:** Reposition overlapping labels to be far apart from each other, placing them in areas with more space.
+            - **Offsets and Staggering:** Use offsets or stagger the positions of labels (e.g., alternate above and below the data points) to enhance visibility.
+        - **Color Differentiation:**
+            - Use colors from the legend to differentiate labels, matching label colors with their corresponding data series or categories.
+        
+
+        4. **Data Representation:**
+        - **Accuracy:**
+            - Accurately plot all data points from the query result.
+            - Ensure data points correspond correctly to the x and y axes.
+        - **Completeness:**
+            - Include all relevant data series and categories in the visualization.
+        - **Integrity:**
+            - Do not distort or manipulate data representation that could mislead interpretation.
+
+        5. **Axis Labels:**
+        - **Clarity:**
+            - Use clear, descriptive labels for both x and y axes.
+            - Include units of measurement where applicable (e.g., "Time (Days)", "Revenue (USD)").
+        - **Formatting:**
+            - Use a readable font size and style.
+            - Apply formatting consistent with the rest of the visualization.
+        - **Positioning:**
+            - Ensure axis labels do not overlap with graph elements such as data points, lines, or bars.
+            - Adjust the placement of the labels if necessary (e.g., add padding or adjust margins).
+
+        6. **Totals and Averages:**
+        - **Display:**
+            - Clearly show total and average values relevant to the data.
+            - Use visual indicators such as horizontal lines, markers, or annotations.
+        - **Positioning:**
+            - Place totals and averages in unobtrusive locations that do not overlap with other data.
+        - **Labeling:**
+            - Label these values clearly, specifying what they represent (e.g., "Average Sales", "Total Units Sold").
+        - **Formatting:**
+            - Use distinct styles (e.g., dashed lines, different colors) to differentiate totals and averages from other data elements.
+
+        7. **Clarity and Spacing:**
+            - **Uncluttered Design:**
+            - Avoid overcrowding the visualization with too many elements.
+            - Remove unnecessary gridlines or background elements that do not add value.
+            - **Whitespace:**
+            - Utilize whitespace effectively to separate different sections and elements.
+            - **Element Sizing:**
+            - Ensure that all elements (text, markers, lines) are appropriately sized for readability.
+            - **Alignment:**
+            - Align elements neatly to create a professional and organized appearance.
+
+        8. **Handling Varying Data Ranges:**
+            - **Separate Axes:**
+            - Use separate y-axes for data series with significantly different ranges.
+            - Implement dual-axis charts where one y-axis is on the left and the other is on the right.
+            - **Differentiation:**
+            - Use different line styles or markers to distinguish between data series associated with different axes.
+            - **Axis Labels:**
+            - Clearly label each axis with the units and data series it represents.
+            - Match the color of the axis labels and tick marks with the corresponding data series if appropriate.
+            - **Scaling:**
+            - Ensure that the scales of both axes are appropriate for the data they represent to prevent misinterpretation.    
+        """
+
+        viz_advice_prompt = ChatPromptTemplate.from_messages([
+            ("system", viz_advice_system),
+            ("user", f"Here is the text information used to generate the code: {messages[0].content}")
+        ])
+        formatted_viz_advice_prompt = viz_advice_prompt.invoke({})
+        viz_advice_llm = self.llm.with_structured_output(VisualizationAdvice)
+        viz_advice_result = viz_advice_llm.invoke(formatted_viz_advice_prompt)
+        print(viz_advice_result)
+        print("--------------------------------Advice given--------------------------------")
+        return {"messages": state["messages"] + [AIMessage(content = f"{viz_advice_result.advice}")]}
+    
+
     def create_visualization(self, state: State):
         messages = state["messages"]
         python_code = messages[-1].content
 
         try:
-            # Set global style
-            # Set global style
             plt.style.use('seaborn-v0_8-whitegrid')
             plt.rcParams.update({
-                # Font settings
+                # Increase figure size
+                'figure.figsize': (20, 12),
+                'figure.dpi': 300,
+                
+                # Keep font sizes smaller for better aesthetics
+                'axes.titlesize': 14,
+                'axes.labelsize': 12,
+                'xtick.labelsize': 10,
+                'ytick.labelsize': 10,
+                'legend.fontsize': 10,
+                
+                # Other settings remain the same
                 'font.family': 'sans-serif',
                 'font.sans-serif': ['Arial', 'Helvetica'],
                 'font.weight': 'medium',
-                
-                # Figure settings
-                'figure.figsize': (10, 6),
-                'figure.dpi': 120,
                 'figure.facecolor': '#ffffff',
-                
-                # Axes settings
                 'axes.facecolor': '#ffffff',
                 'axes.edgecolor': '#E2E8F0',
                 'axes.linewidth': 0.8,
                 'axes.grid': True,
-                'axes.titlesize': 14,
                 'axes.titleweight': 'semibold',
                 'axes.titlepad': 20,
-                'axes.labelsize': 11,
                 'axes.labelweight': 'medium',
                 'axes.labelcolor': '#4B5563',
                 'axes.spines.top': False,
                 'axes.spines.right': False,
-                
-                # Grid settings
                 'grid.color': '#E2E8F0',
                 'grid.alpha': 0.2,
                 'grid.linestyle': '--',
-                
-                # Tick settings
-                'xtick.color': '#6B7280',
-                'ytick.color': '#6B7280',
-                'xtick.labelsize': 10,
-                'ytick.labelsize': 10,
-                
-                # Legend settings
                 'legend.frameon': False,
-                'legend.fontsize': 10,
-                'legend.title_fontsize': 11,
-                
-                # Layout
                 'figure.constrained_layout.use': True,
-                'figure.constrained_layout.h_pad': 0.4,
-                'figure.constrained_layout.w_pad': 0.4
+                'figure.constrained_layout.h_pad': 1.0,
+                'figure.constrained_layout.w_pad': 1.0
             })
-            
+                
             # Execute visualization code
             output = self.python_repl.run(python_code)
+            
+            # Apply rotation to x-axis labels after plot is created
+            plt.xticks(rotation=45, ha='right')
             
             # Save with enhanced quality settings
             buf = io.BytesIO()
@@ -346,7 +310,7 @@ class VisualizationAgent:
                     dpi=300,
                     facecolor='#ffffff',
                     edgecolor='none',
-                    pad_inches=0.3,
+                    pad_inches=0.5,
                     transparent=False)
             buf.seek(0)
             
@@ -365,10 +329,13 @@ class VisualizationAgent:
         workflow = StateGraph(State)
         
         workflow.add_node("create_python_code", self.create_python_code)
-        workflow.add_node("create_visualization", self.create_visualization)    
-        
-        workflow.add_edge(START, "create_python_code")
+        workflow.add_node("create_visualization", self.create_visualization)  
+        workflow.add_node("viz_advice", self.viz_advice)
+
+        workflow.add_edge(START, "viz_advice")
+        workflow.add_edge("viz_advice", "create_python_code")
         workflow.add_edge("create_python_code", "create_visualization")
+        #workflow.add_edge("correct_python_code", "create_visualization")
         workflow.add_edge("create_visualization", END)
         
         app = workflow.compile()
@@ -377,6 +344,45 @@ class VisualizationAgent:
         response = app.invoke({"messages": [HumanMessage(content=query_result)]})
         return response["messages"][-1].content
     
+    def apply_style_enhancements(self):
+        """Apply consistent style enhancements to the current plot"""
+        # Get current axis
+        ax = plt.gca()
+        
+        # Add subtle gradient background
+        ax.set_facecolor('#F8FAFC')
+        
+        # Enhance legend
+        if ax.get_legend():
+            ax.legend(
+                facecolor='white',
+                edgecolor='#E2E8F0',
+                framealpha=0.9,
+                loc='best',
+                bbox_to_anchor=(1.02, 1),
+            )
+        
+        # Add subtle top border gradient
+        gradient = np.linspace(0, 1, 100).reshape(1, -1)
+        gradient = np.vstack((gradient, gradient))
+        extent = [ax.get_xlim()[0], ax.get_xlim()[1], 1.01, 1.02]
+        ax.imshow(gradient, aspect='auto', extent=extent, 
+                  cmap='RdYlBu_r', alpha=0.1)
+        
+        # Enhance grid
+        ax.grid(True, 'major', color='#E2E8F0', alpha=0.2, linestyle='--')
+        
+        # Add padding
+        plt.tight_layout(pad=1.5)
+
+    def get_color_palette(self, n_colors):
+        """Generate a consistent color palette for n series"""
+        if n_colors == 1:
+            return ['#6366F1']
+        elif n_colors == 2:
+            return ['#6366F1', '#818CF8']
+        else:
+            return [plt.cm.RdYlBu(i/n_colors) for i in range(n_colors)]
 
 if __name__ == "__main__":
     viz_agent = VisualizationAgent()
