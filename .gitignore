@@ -11,3 +11,5 @@ downloaded_database.db
 db_store.sqlite
 example_db_connection_query.txt
 uploads/
+*.csv
+uploads/
