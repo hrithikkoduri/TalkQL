@@ -1,5 +1,8 @@
 import { motion } from 'framer-motion';
-import { ChartBarIcon, ChartPieIcon } from '@heroicons/react/24/outline';
+import { 
+  ChartBarIcon, 
+  Bars3Icon 
+} from '@heroicons/react/24/outline';
 
 interface ToggleSwitchProps {
   enabled: boolean;
@@ -53,9 +56,9 @@ export const ToggleSwitch = ({ enabled, setEnabled }: ToggleSwitchProps) => {
                   />
                   <div className="relative z-10">
                     {enabled ? (
-                      <ChartPieIcon className="h-4 w-4" />
-                    ) : (
                       <ChartBarIcon className="h-4 w-4" />
+                    ) : (
+                      <Bars3Icon className="h-4 w-4" />
                     )}
                   </div>
                 </motion.div>
