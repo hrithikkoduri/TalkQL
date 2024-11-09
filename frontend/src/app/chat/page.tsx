@@ -9,6 +9,7 @@ import { DisconnectButton } from '@/components/ui/DisconnectButton';
 import { Header } from '@/components/layout/Header';
 
 import { Message } from '@/types/chat';
+import { BackgroundEffect } from '@/components/effects/BackgroundEffect';
 
 export default function DatabaseChat() {
     const [vizEnabled, setVizEnabled] = useState(false);
@@ -123,43 +124,48 @@ export default function DatabaseChat() {
     };
   
     return (
-        <div className="relative min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-          <Logo minimal isTransitioning />
+        <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative">
+          <div className="absolute inset-0 z-0">
+            <BackgroundEffect />
+          </div>
+          <div className="relative z-10">
+            <Logo minimal isTransitioning />
 
-          {connectedDBInfo && (
-            <div className="fixed top-4 right-4 z-[100]">
-              <DisconnectButton
-                dbType={connectedDBInfo.type}
-                dbName={connectedDBInfo.name}
-                onDisconnect={handleDisconnect}
-              />
-            </div>
-          )}
-          
-          <div className="flex flex-col h-[calc(100vh-5rem)] pt-20">
-            {showInitialText && (
-              <div className="text-center text-gray-500 mt-12 animate-fade-in">
-                Start a conversation with your database
+            {connectedDBInfo && (
+              <div className="fixed top-4 right-4 z-[100]">
+                <DisconnectButton
+                  dbType={connectedDBInfo.type}
+                  dbName={connectedDBInfo.name}
+                  onDisconnect={handleDisconnect}
+                />
               </div>
             )}
+            
+            <div className="flex flex-col h-[calc(100vh-5rem)] pt-20">
+              {showInitialText && (
+                <div className="text-center text-gray-500 mt-12 animate-fade-in">
+                  Start a conversation with your database
+                </div>
+              )}
 
-            <div className="relative flex-1 overflow-hidden">
-          <div className="absolute inset-0 overflow-y-auto">
-            <div className="max-w-[85rem] mx-auto">
-            <ChatMessages
-            messages={messages}
-            isLoading={isLoading}
-            vizEnabled={vizEnabled}
-            setVizEnabled={setVizEnabled}
-            tabularMode={tabularMode}
-            setTabularMode={setTabularMode}
-            />
+              <div className="relative flex-1 overflow-hidden">
+            <div className="absolute inset-0 overflow-y-auto">
+              <div className="max-w-[85rem] mx-auto">
+              <ChatMessages
+              messages={messages}
+              isLoading={isLoading}
+              vizEnabled={vizEnabled}
+              setVizEnabled={setVizEnabled}
+              tabularMode={tabularMode}
+              setTabularMode={setTabularMode}
+              />
+              </div>
             </div>
           </div>
-        </div>
-            
-            <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+              
+              <ChatInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+            </div>
           </div>
-        </div>
+        </main>
       );
     }
