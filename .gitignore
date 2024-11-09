@@ -15,3 +15,4 @@ uploads/
 uploads/
 backend/customers-2000000.csv
 *.csv
+backend/db_store.sqlite
