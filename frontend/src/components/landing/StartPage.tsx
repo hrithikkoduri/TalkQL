@@ -40,7 +40,7 @@ export const StartPage = ({ onStart, isExiting }: StartPageProps) => (
             <div className="relative">
               <h1 className="text-9xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600
                 [text-shadow:_0_4px_20px_rgb(37_99_235_/_40%),_0_8px_40px_rgb(147_51_234_/_30%)]
-                drop-shadow-xl relative z-10">
+                drop-shadow-sm relative z-10">
                 TalkQL
               </h1>
               <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 blur-3xl transform scale-150" />

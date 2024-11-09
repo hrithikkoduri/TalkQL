@@ -229,7 +229,7 @@ export const ChatMessages = ({ messages, isLoading, vizEnabled, setVizEnabled, t
       </div>
 
       {/* Main chat content */}
-      <div className="flex-1 overflow-y-auto p-4 pl-[240px] pr-[100px] space-y-8 pb-32">
+      <div className="flex-1 overflow-y-auto p-4 pl-[180px] pr-[100px] space-y-8 pb-32">
         {messages.map((message, index) => (
           <div
             key={index}
