@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import { FloatingLines } from '../effects/FloatingLines';
 
 interface StartPageProps {
   onStart: () => void;
@@ -25,6 +26,7 @@ export const StartPage = ({ onStart, isExiting }: StartPageProps) => (
     <div className="absolute inset-0 overflow-hidden">
       <div className="absolute top-1/4 -left-12 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 -right-12 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl" />
+      <FloatingLines />
     </div>
 
     <AnimatePresence>

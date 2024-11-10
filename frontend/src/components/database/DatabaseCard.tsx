@@ -38,7 +38,7 @@ export const DatabaseCard = ({
         ? 'border-blue-500/50 shadow-[0_20px_50px_rgba(59,130,246,0.4),_0_15px_30px_rgba(147,51,234,0.3)]' 
         : 'border-white/30 hover:border-blue-200/50 hover:shadow-[0_15px_45px_rgba(59,130,246,0.25),_0_12px_25px_rgba(147,51,234,0.15)]'
       }
-      shadow-[0_8px_20px_rgba(59,130,246,0.1)]
+      shadow-[0_20px_35px_rgba(59,130,246,0.2)]
       ${isConnecting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       transform-gpu
     `}
@@ -46,7 +46,7 @@ export const DatabaseCard = ({
     <motion.div 
       className="relative w-full h-full flex items-center justify-center"
       animate={{ 
-        scale: isSelected ? 1.4 : 1,
+        scale: isSelected ? 2 : 1,
         rotate: isSelected ? 3 : 0,
         y: isSelected ? '-10%' : '0%',
       }}
@@ -59,8 +59,8 @@ export const DatabaseCard = ({
       <Image
         src={logoSrc}
         alt={`${dbType} database`}
-        width={150}
-        height={150}
+        width={100}
+        height={100}
         className={`
           transition-all duration-300
           ${isSelected 

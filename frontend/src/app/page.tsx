@@ -16,6 +16,7 @@ import { Logo } from '@/components/layout/Logo';  // Add this import
 import { StartPage } from '@/components/landing/StartPage';
 import { FeaturesList } from '@/components/features/FeaturesList';
 import { BackgroundEffect } from '@/components/effects/BackgroundEffect';
+import { FloatingLines } from '@/components/effects/FloatingLines';
 
 
 
@@ -184,6 +185,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 pt-40 pb-12 px-4 relative">
+      <FloatingLines />
       <div className="absolute inset-0 z-0">
         <BackgroundEffect />
       </div>
@@ -230,7 +232,7 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover 
+                <div className={`bg-white/20 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover 
                   border border-gray-100/50 pr-12 pl-24 py-8 relative overflow-hidden 
                   transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]
                   h-[730px] ${selectedDB ? 'h-[840px]' : ''}`}>
