@@ -232,11 +232,11 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className={`bg-white/20 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover 
-                  border border-gray-100/50 pr-12 pl-24 py-8 relative overflow-hidden 
+                <div className={`bg-white/40 backdrop-blur-[2px] rounded-2xl shadow-card hover:shadow-card-hover 
+                  border border-gray-100/20 pr-12 pl-24 py-8 relative overflow-hidden 
                   transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]
                   h-[730px] ${selectedDB ? 'h-[840px]' : ''}`}>
-                  <div className="text-center mb-12">
+                  <div className="text-center mb-12 pr-12">
                     <h1 className="text-4xl font-semibold text-gray-700 mb-4">
                       Database Connection Hub
                     </h1>
@@ -273,7 +273,7 @@ export default function Home() {
                         : 'w-0 opacity-0 translate-x-full'
                     }`}>
                       {selectedDB && (
-                        <div className="bg-white/90 backdrop-blur-sm rounded-xl p-8 border border-gray-200/50 shadow-lg">
+                        <div className="bg-white/80 backdrop-blur-[2px] rounded-xl p-8 border border-gray-200/20 shadow-lg">
                           <div className="flex items-center space-x-3 mb-6">
                             <div className="p-2 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow-sm">
                               <BeakerIcon className="h-5 w-5 text-blue-600" />
