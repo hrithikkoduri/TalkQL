@@ -232,20 +232,23 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className={`bg-white/80 backdrop-blur-[2px] rounded-2xl shadow-card hover:shadow-card-hover 
+                <div className={`bg-white/40 backdrop-blur-[4px] rounded-2xl 
+                  shadow-[0_10px_30px_-5px_rgba(0,0,0,0.15),_0_20px_40px_-10px_rgba(0,0,0,0.1)]
+                  hover:shadow-[0_15px_35px_-5px_rgba(0,0,0,0.3),_0_25px_45px_-10px_rgba(0,0,0,0.2)]
                   border border-gray-100/20 pr-12 pl-24 py-8 relative overflow-hidden 
                   transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]
                   h-[730px] ${selectedDB ? 'h-[840px]' : ''}`}>
-                  <div className="text-center mb-12 pr-12">
-                    <h1 className="text-4xl font-semibold text-gray-700 mb-4">
+                  <div className="text-center mb-12 max-w-xl mx-auto pr-16">
+                    <h1 className="text-4xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 mb-4">
                       Database Connection Hub
                     </h1>
                     <p className="text-gray-500 text-lg">
                       Unlock the power of natural conversations with your data
                     </p>
-                    <p className="text-gray-400 text-base mt-2">
+                    <p className="text-gray-400 text-base mt-2 mb-6">
                       Select your database type and enter connection details
                     </p>
+                    <div className="h-0.5 w-24 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto" />
                   </div>
                   
                   {error && (

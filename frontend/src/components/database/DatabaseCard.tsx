@@ -25,7 +25,7 @@ export const DatabaseCard = ({
     disabled={isConnecting}
     onHoverStart={() => onHover(true)}
     onHoverEnd={() => onHover(false)}
-    whileHover={{ scale: isSelected ? 1 : 1.02 }}
+    whileHover={{ scale: isSelected ? 1 : 1.2 }}
     whileTap={{ scale: 0.98 }}
     className={`
       group w-full aspect-square rounded-2xl
