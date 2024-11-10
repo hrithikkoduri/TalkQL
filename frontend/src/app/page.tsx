@@ -232,7 +232,7 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className={`bg-white/40 backdrop-blur-[2px] rounded-2xl shadow-card hover:shadow-card-hover 
+                <div className={`bg-white/80 backdrop-blur-[2px] rounded-2xl shadow-card hover:shadow-card-hover 
                   border border-gray-100/20 pr-12 pl-24 py-8 relative overflow-hidden 
                   transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]
                   h-[730px] ${selectedDB ? 'h-[840px]' : ''}`}>

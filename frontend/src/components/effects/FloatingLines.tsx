@@ -39,8 +39,8 @@ export const FloatingLines = () => {
         dots.push({
           x,
           y,
-          vx: (Math.random() - 0.5) * 0.06,
-          vy: (Math.random() - 0.5) * 0.06,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
           network: 'left'
         });
       }
@@ -53,8 +53,8 @@ export const FloatingLines = () => {
         dots.push({
           x,
           y,
-          vx: (Math.random() - 0.5) * 0.06,
-          vy: (Math.random() - 0.5) * 0.06,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
           network: 'right'
         });
       }
