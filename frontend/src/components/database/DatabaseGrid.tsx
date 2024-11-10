@@ -22,7 +22,7 @@ export const DatabaseGrid = ({
   return (
     <motion.div
       layout
-      className="w-full grid grid-cols-3 relative max-w-[700px] gap-16 min-h-[500px]"
+      className="w-full grid grid-cols-3 relative max-w-[700px] gap-24 min-h-[500px]"
       initial={false}
       animate={{
         gap: selectedDB ? "3rem" : "2rem",

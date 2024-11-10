@@ -206,7 +206,7 @@ export default function Home() {
               </div>
             )}
 
-            <div className={`transition-all duration-500 mx-auto ${
+            <div className={`transition-all duration-1000 ease-[cubic-bezier(0.4,0,0.2,1)] mx-auto ${
               selectedDB ? 'max-w-[90rem]' : 'max-w-3xl'
             }`}>
               <Logo isTransitioning={isHeaderExiting} />
@@ -230,19 +230,18 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover border border-gray-100/50 p-8 relative overflow-hidden transition-all duration-300 ${
-                  selectedDB ? 'min-h-[800px]' : 'min-h-[550px]'
-                }`}>               
-                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent" />
-                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400/40 to-transparent" />
-                  <div className="text-center space-y-4 mb-8">
-                    <h2 className="text-3xl font-bold text-gray-500">
+                <div className={`bg-white/80 backdrop-blur-lg rounded-2xl shadow-card hover:shadow-card-hover 
+                  border border-gray-100/50 pr-12 pl-24 py-8 relative overflow-hidden 
+                  transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)]
+                  h-[730px] ${selectedDB ? 'h-[840px]' : ''}`}>
+                  <div className="text-center mb-12">
+                    <h1 className="text-4xl font-semibold text-gray-700 mb-4">
                       Database Connection Hub
-                    </h2>
-                    <p className="text-xl text-gray-400">
+                    </h1>
+                    <p className="text-gray-500 text-lg">
                       Unlock the power of natural conversations with your data
                     </p>
-                    <p className="text-gray-400">
+                    <p className="text-gray-400 text-base mt-2">
                       Select your database type and enter connection details
                     </p>
                   </div>
@@ -258,7 +257,7 @@ export default function Home() {
                     </div>
                   )}
 
-                  <div className="flex gap-9 justify-center items-start h-full ">
+                  <div className="flex gap-16 justify-center items-start h-full ">
                     <DatabaseGrid
                       selectedDB={selectedDB}
                       isConnecting={isConnecting}
@@ -266,9 +265,9 @@ export default function Home() {
                       dbLogos={dbLogos}
                     />
 
-                    <div className={`transition-all duration-500 ease-in-out ${
+                    <div className={`transition-[width,opacity,transform] duration-700 ease-in-out -mt-4 ${
                       selectedDB 
-                        ? 'w-[700px] opacity-100 translate-x-0' 
+                        ? 'w-[1600px] opacity-100 translate-x-0' 
                         : 'w-0 opacity-0 translate-x-full'
                     }`}>
                       {selectedDB && (
