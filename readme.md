@@ -3,12 +3,19 @@
   <p align="center" style="font-size: 1.5rem; color: #4F46E5; margin-bottom: 1rem;">
     Turn conversations into insights with natural database interactions
   </p>
-  <div align="center" style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
-    <img src="https://img.shields.io/badge/Database-Multi--Support-orange" alt="Database Support"/>
-    <img src="https://img.shields.io/badge/LangChain-Enabled-blue" alt="LangChain"/>
-    <img src="https://img.shields.io/badge/Query-Natural%20Language-green" alt="Natural Language"/>
-    <img src="https://img.shields.io/badge/Visualization-Smart%20Charts-purple" alt="Smart Visualization"/>
-  </div>
+  <div align="center" style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+  <!-- Frontend -->
+  <img src="https://img.shields.io/badge/Next.js-15.0-black?logo=next.js" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/React-18-blue?logo=react" alt="React"/>
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Tailwind-3.0-38BDF8?logo=tailwind-css" alt="Tailwind"/>
+  <img src="https://img.shields.io/badge/Framer_Motion-10.0-BB4AC7?logo=framer" alt="Framer Motion"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.100-009688?logo=fastapi" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/LangChain-Enabled-00A0DC?logo=chainlink" alt="LangChain"/>
+  <img src="https://img.shields.io/badge/GPT--4o-Powered-00A67E?logo=openai" alt="GPT-4o"/>
+  <img src="https://img.shields.io/badge/Multi--DB-Support-FF6B6B?logo=postgresql" alt="Multi-DB"/>
+  <img src="https://img.shields.io/badge/Visualization-Matplotlib-11557C?logo=python" alt="Visualization"/>
+</div>
 </div>
 
 # Introduction
